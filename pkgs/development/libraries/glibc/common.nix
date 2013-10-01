@@ -47,6 +47,14 @@ stdenv.mkDerivation ({
       /* Don't use /etc/ld.so.preload, but /etc/ld-nix.so.preload.  */
       ./dont-use-system-ld-so-preload.patch
 
+      /* Remove references to the compilation date.  */
+      ./glibc-remove-date-from-compilation-banner.patch
+
+      /* Remove the date and time from nscd.  It is used as a protocol
+         compatibility check, but we assume nix takes care of that for
+         us. */
+      ./glibc-remove-datetime-from-nscd.patch
+
       /* Add blowfish password hashing support.  This is needed for
          compatibility with old NixOS installations (since NixOS used
          to default to blowfish). */
