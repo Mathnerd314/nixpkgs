@@ -64,22 +64,29 @@ rec {
   # the bootstrap.  In all stages, we build an stdenv and the package
   # set that can be built with that stdenv.
   stageFun =
-    {gccPlain, glibc, binutils, coreutils, name, overrides ? (pkgs: {}), extraBuildInputs ? []}:
+    {gccPlain, glibc, binutils, coreutils, name, overrides ? (pkgs: {}), extraBuildInputs ? []
+    ,deterministic ? true, bootnum ? ""}:
 
     let
 
       thisStdenv = import ../generic {
         inherit system config extraBuildInputs;
-        name = "stdenv-linux-boot";
+        name = "stdenv-linux-boot" + bootnum;
         preHook =
           ''
             # Don't patch #!/interpreter because it leads to retained
             # dependencies on the bootstrapTools in the final stdenv.
             dontPatchShebangs=1
             ${commonPreHook}
+          '' + lib.optionalString deterministic ''
+            # Make "strip" produce deterministic output, by setting
+            # timestamps etc. to a fixed value.
+            commonStripFlags="--enable-deterministic-archives"
           '';
         shell = "${bootstrapTools}/bin/sh";
-        initialPath = [bootstrapTools];
+        # We put binutils before bootstrapTools so that we gradually use less from bootstrapTools.
+        # Also, deterministic builds require a fresh binutils (strip).
+        initialPath = [binutils] ++ [bootstrapTools];
         fetchurlBoot = import ../../build-support/fetchurl {
           stdenv = stage0.stdenv;
           curl = bootstrapTools;
@@ -142,6 +149,8 @@ rec {
         '';
       };
     };
+    bootnum = "0";
+    deterministic = false;
   };
 
 
@@ -174,6 +183,9 @@ rec {
       # top-level pkgs as an override either.
       perl = pkgs.perl.override { enableThreading = false; };
     };
+    bootnum = "1";
+    # The bootstrap tools might not support a deterministic strip
+    deterministic = false;
   };
 
 
@@ -190,6 +202,7 @@ rec {
       inherit (stage1.pkgs) perl binutils paxctl;
       # This also contains the full, dynamically linked, final Glibc.
     };
+    bootnum = "2";
   };
 
 
@@ -221,6 +234,7 @@ rec {
       };
     };
     extraBuildInputs = [ stage2.pkgs.patchelf stage2.pkgs.paxctl ];
+    bootnum = "3";
   };
 
 
@@ -251,6 +265,7 @@ rec {
       };
     };
     extraBuildInputs = [ stage3.pkgs.patchelf stage3.pkgs.xz ];
+    bootnum = "4";
   };
 
 
