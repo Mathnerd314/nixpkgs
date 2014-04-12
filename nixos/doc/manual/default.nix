@@ -97,7 +97,7 @@ in rec {
 
     inherit sources;
 
-    buildInputs = [ libxml2 libxslt ];
+    buildInputs = [ libxml2 libxslt perl ];
 
     buildCommand = ''
       ${copySources}
@@ -125,6 +125,21 @@ in rec {
         --stringparam chunk.toc ${toc} \
         --nonet --xinclude --output $dst/ \
         ${docbook5_xsl}/xml/xsl/docbook/xhtml/chunktoc.xsl ./manual.xml
+
+      # Fix the non-deterministic id-generation used by xsltproc
+      # !!! Move this somewhere else
+      perl -0777 -pi -e '
+          # xsltproc html output id remapping
+          # pretty weird that xsltproc cannot do this
+          # Author: Alexander Kjeldaas <ak@formalprivacy.com>
+          my @parts = split(/(href="#|id="|href="#ftn.|id="ftn.)(id.\d+")/g, $_);
+          my %remap = {};
+          for (my $i = 0; $i < @parts; $i += 3) {
+              my $id = @parts[ $i+2 ];
+              $remap{$id} = $i unless exists $remap{$id};
+              @parts[ $i+2 ] = "idp$remap{$id}\"";
+          }
+          $_ = join "", @parts; ' $dst/manual.html
 
       mkdir -p $dst/images/callouts
       cp ${docbook5_xsl}/xml/xsl/docbook/images/callouts/*.gif $dst/images/callouts/
