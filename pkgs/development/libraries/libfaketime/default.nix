@@ -12,6 +12,11 @@ stdenv.mkDerivation rec {
     makeFlagsArray+=(PREFIX="$out" LIBDIRNAME=/lib)
   '';
 
+  patches = [
+    ./avoid-spurious-lrt.patch
+    ./no-date-in-gzip-man-page.patch
+  ];
+
   meta = with stdenv.lib; {
     description = "Report faked system time to programs without having to change the system-wide time";
     homepage = http://www.code-wizards.com/projects/libfaketime/;
