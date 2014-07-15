@@ -11,18 +11,18 @@ assert stdenv.isLinux;
 assert pythonSupport -> pythonPackages != null;
 
 stdenv.mkDerivation rec {
-  version = "212";
+  version = "215";
   name = "systemd-${version}";
 
   src = fetchurl {
     url = "http://www.freedesktop.org/software/systemd/${name}.tar.xz";
-    sha256 = "1hpjcc42svrs06q3isjm3m5aphgkpfdylmvpnif71zh46ys0cab5";
+    sha256 = "01a5292hk6mnahkw7b8r7yipd6qc1i8saiilda0dqjkxbv0a6xnf";
   };
 
   patches =
     [ # These are all changes between upstream and
       # https://github.com/edolstra/systemd/tree/nixos-v212.
-      ./fixes.patch
+      # ./fixes.patch
     ];
 
   buildInputs =
