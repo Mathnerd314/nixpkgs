@@ -84,6 +84,12 @@ in
           mkdir -p ${cfg.dataDir}
           chown ${user} ${cfg.dataDir}
         '';
+        # TODO:
+        #  if test ! -e ${cfg.dataDir}/db-created
+        #      createuser --no-superuser --no-createdb --no-createrole -P quassel
+        #      createdb -O quassel quassel
+        #      touch ${cfg.dataDir}/db-created
+        #  fi;
 
         serviceConfig =
         {
