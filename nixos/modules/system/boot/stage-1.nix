@@ -34,7 +34,7 @@ let
       doublePatchelf = pkgs.stdenv.isArm;
     }
     ''
-      mkdir -p $out/bin $out/lib
+      mkdir -p $out/bin $out/lib $out/lib/systemd
       ln -s $out/bin $out/sbin
 
       # Copy what we need from Glibc.
@@ -75,6 +75,14 @@ let
       cp -v ${pkgs.kmod}/bin/kmod $out/bin/
       ln -sf kmod $out/bin/modprobe
 
+      # Copy systemd and its dependencies
+      cp -v ${pkgs.systemd}/lib/systemd/systemd $out/bin
+      cp -v ${pkgs.systemd}/lib/systemd/system-generators/systemd-fstab-generator $out/bin
+      cp -v ${pkgs.systemd}/lib/systemd/system-generators/systemd-gpt-auto-generator $out/bin
+      cp -v ${pkgs.systemd}/bin/systemd-tmpfiles $out/bin
+      cp -v ${pkgs.libcap}/lib/libcap.so.* $out/lib
+      cp -v ${pkgs.pam}/lib/libpam.so.* $out/lib
+
       ${config.boot.initrd.extraUtilsCommands}
 
       # Strip binaries further than normal.
@@ -103,6 +111,7 @@ let
       $out/bin/dmsetup --version 2>&1 | tee -a log | grep "version:"
       LVM_SYSTEM_DIR=$out $out/bin/lvm version 2>&1 | tee -a log | grep "LVM"
       $out/bin/mdadm --version
+      $out/bin/systemd --version
 
       ${config.boot.initrd.extraUtilsCommandsTest}
     ''; # */
