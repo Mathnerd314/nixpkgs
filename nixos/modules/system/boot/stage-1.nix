@@ -34,7 +34,7 @@ let
       doublePatchelf = pkgs.stdenv.isArm;
     }
     ''
-      mkdir -p $out/bin $out/lib $out/lib/systemd
+      mkdir -p $out/bin $out/lib
       ln -s $out/bin $out/sbin
 
       # Copy what we need from Glibc.
@@ -75,14 +75,6 @@ let
       cp -v ${pkgs.kmod}/bin/kmod $out/bin/
       ln -sf kmod $out/bin/modprobe
 
-      # Copy systemd and its dependencies
-      cp -v ${pkgs.systemd}/lib/systemd/systemd $out/bin
-      cp -v ${pkgs.systemd}/lib/systemd/system-generators/systemd-fstab-generator $out/bin
-      cp -v ${pkgs.systemd}/lib/systemd/system-generators/systemd-gpt-auto-generator $out/bin
-      cp -v ${pkgs.systemd}/bin/systemd-tmpfiles $out/bin
-      cp -v ${pkgs.libcap}/lib/libcap.so.* $out/lib
-      cp -v ${pkgs.pam}/lib/libpam.so.* $out/lib
-
       ${config.boot.initrd.extraUtilsCommands}
 
       # Strip binaries further than normal.
@@ -102,6 +94,8 @@ let
           fi
       done
 
+      ${config.boot.initrd.extraUtilsCommandsPatch}
+
       # Make sure that the patchelf'ed binaries still work.
       echo "testing patched programs..."
       $out/bin/ash -c 'echo hello world' | grep "hello world"
@@ -111,7 +105,6 @@ let
       $out/bin/dmsetup --version 2>&1 | tee -a log | grep "version:"
       LVM_SYSTEM_DIR=$out $out/bin/lvm version 2>&1 | tee -a log | grep "LVM"
       $out/bin/mdadm --version
-      $out/bin/systemd --version
 
       ${config.boot.initrd.extraUtilsCommandsTest}
     ''; # */
@@ -294,6 +287,16 @@ in
         Shell commands to be executed in the builder of the
         extra-utils derivation.  This can be used to provide
         additional utilities in the initial ramdisk.
+      '';
+    };
+
+    boot.initrd.extraUtilsCommandsPatch = mkOption {
+      internal = true;
+      default = "";
+      type = types.lines;
+      description = ''
+        Shell commands to be executed in the builder to patch
+        further binaries and libraries.
       '';
     };
 

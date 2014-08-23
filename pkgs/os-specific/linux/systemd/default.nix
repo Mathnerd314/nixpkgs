@@ -3,7 +3,7 @@
 , glib, kbd, libxslt, coreutils, libgcrypt, sysvtools, docbook_xsl
 , kexectools, libmicrohttpd, linuxHeaders
 , pythonPackages ? null, pythonSupport ? false
-, autoreconfHook
+, autoreconfHook, pamSupport ? true
 }:
 
 assert stdenv.isLinux;
@@ -48,7 +48,7 @@ stdenv.mkDerivation rec {
       "--disable-networkd" # enable/use eventually
       "--enable-compat-libs" # get rid of this eventually
       "--disable-tests"
-    ];
+    ] ++ stdenv.lib.optional (!pamSupport) "--disable-pam";
 
   preConfigure =
     ''
