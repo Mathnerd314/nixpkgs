@@ -82,7 +82,7 @@ let
       stripDirs "lib bin" "-s"
 
       # Run patchelf to make the programs refer to the copied libraries.
-      for i in $out/bin/* $out/lib/*; do if ! test -L $i; then nuke-refs $i; fi; done
+      for i in $out/bin/* $out/lib/*; do if ! test -L $i; then nuke-refs -p $out $i; fi; done
 
       for i in $out/bin/*; do
           if ! test -L $i; then
@@ -216,7 +216,7 @@ let
           };
           symlink = "/etc/modprobe.d/ubuntu.conf";
         }
-      ];
+      ] ++ config.boot.initrd.extraContents;
   };
 
 in
@@ -312,6 +312,15 @@ in
       '';
     };
 
+    boot.initrd.extraContents = mkOption {
+      internal = true;
+      default = [];
+      type = types.listOf types.attrs;
+      description = ''
+        Additional objects to be added to the initrd.
+      '';
+    };
+    
     boot.initrd.compressor = mkOption {
       internal = true;
       default = "gzip -9";
@@ -362,6 +371,16 @@ in
     systemd.units."dev-root.device".text = "";
 
     boot.initrd.supportedFilesystems = map (fs: fs.fsType) fileSystems;
+
+    boot.initrd.systemd.mounts = map (fs:
+      { what = fs.device;
+        where = fs.mountPoint;
+        type = fs.fsType;
+        options = fs.options;
+        unitConfig = { DefaultDependencies = false; };
+        wantedBy = if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
+      }
+    ) fileSystems;
 
   };
 }

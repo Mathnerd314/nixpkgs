@@ -2,6 +2,7 @@
 
 with lib;
 with utils;
+with import ./systemd-unit-options.nix { inherit config lib; };
 
 let
 
@@ -23,164 +24,33 @@ let
           ln -s /dev/null $out/${shellEscape name}
         '';
 
-  upstreamSystemUnits =
+  upstreamInitrdUnits =
     [ # Targets.
       "basic.target"
       "sysinit.target"
       "sockets.target"
-      "graphical.target"
-      "multi-user.target"
-      "network.target"
-      "network-online.target"
-      "nss-lookup.target"
-      "nss-user-lookup.target"
-      "time-sync.target"
-      #"cryptsetup.target"
-      "sigpwr.target"
+      "initrd.target"
       "timers.target"
+      "slices.target"
       "paths.target"
-      "rpcbind.target"
 
+      # Initrd units.
+      "initrd-root-fs.target"
+      "initrd-fs.target"
+      "initrd-parse-etc.service"
+      
       # Rescue mode.
       "rescue.target"
       "rescue.service"
-
-      # Udev.
-      "systemd-udevd-control.socket"
-      "systemd-udevd-kernel.socket"
-      "systemd-udevd.service"
-      "systemd-udev-settle.service"
-      "systemd-udev-trigger.service"
-
-      # Consoles.
-      "getty.target"
-      "getty@.service"
-      "serial-getty@.service"
-      "container-getty@.service"
-      "systemd-vconsole-setup.service"
-
-      # Hardware (started by udev when a relevant device is plugged in).
-      "sound.target"
-      "bluetooth.target"
-      "printer.target"
-      "smartcard.target"
-
-      # Login stuff.
-      "systemd-logind.service"
-      "autovt@.service"
-      #"systemd-vconsole-setup.service"
-      "systemd-user-sessions.service"
-      "dbus-org.freedesktop.login1.service"
-      "dbus-org.freedesktop.machine1.service"
-      "user@.service"
-
-      # Journal.
-      "systemd-journald.socket"
-      "systemd-journald.service"
-      "systemd-journal-flush.service"
-      "systemd-journal-gatewayd.socket"
-      "systemd-journal-gatewayd.service"
-      "syslog.socket"
-
-      # SysV init compatibility.
-      "systemd-initctl.socket"
-      "systemd-initctl.service"
-
-      # Kernel module loading.
-      "systemd-modules-load.service"
-      "kmod-static-nodes.service"
-
-      # Filesystems.
-      "systemd-fsck@.service"
-      "systemd-fsck-root.service"
-      "systemd-remount-fs.service"
-      "local-fs.target"
-      "local-fs-pre.target"
-      "remote-fs.target"
-      "remote-fs-pre.target"
-      "swap.target"
-      "dev-hugepages.mount"
-      "dev-mqueue.mount"
-      "proc-sys-fs-binfmt_misc.mount"
-      "sys-fs-fuse-connections.mount"
-      "sys-kernel-config.mount"
-      "sys-kernel-debug.mount"
-
-      # Maintaining state across reboots.
-      "systemd-random-seed.service"
-      "systemd-backlight@.service"
-      "systemd-rfkill@.service"
-
-      # Hibernate / suspend.
-      "hibernate.target"
-      "suspend.target"
-      "sleep.target"
-      "hybrid-sleep.target"
-      "systemd-hibernate.service"
-      "systemd-suspend.service"
-      "systemd-hybrid-sleep.service"
-      "systemd-shutdownd.socket"
-      "systemd-shutdownd.service"
-
-      # Reboot stuff.
-      "reboot.target"
-      "systemd-reboot.service"
-      "poweroff.target"
-      "systemd-poweroff.service"
-      "halt.target"
-      "systemd-halt.service"
-      "ctrl-alt-del.target"
-      "shutdown.target"
-      "umount.target"
-      "final.target"
-      "kexec.target"
-      "systemd-kexec.service"
-      "systemd-update-utmp.service"
-
-      # Password entry.
-      "systemd-ask-password-console.path"
-      "systemd-ask-password-console.service"
-      "systemd-ask-password-wall.path"
-      "systemd-ask-password-wall.service"
-
-      # Slices / containers.
-      "slices.target"
-      "-.slice"
-      "system.slice"
-      "user.slice"
-      "machine.slice"
-      "systemd-machined.service"
-
-      # Temporary file creation / cleanup.
-      "systemd-tmpfiles-clean.service"
-      "systemd-tmpfiles-clean.timer"
-      "systemd-tmpfiles-setup.service"
-      "systemd-tmpfiles-setup-dev.service"
-
-      # Misc.
-      "systemd-sysctl.service"
+      "emergency.target"
+      "emergency.service"
     ]
 
-    ++ cfg.additionalUpstreamSystemUnits;
+    ++ cfg.additionalUpstreamInitrdUnits;
 
-  upstreamSystemWants =
+  upstreamInitrdWants =
     [ #"basic.target.wants"
       "sysinit.target.wants"
-      "sockets.target.wants"
-      "local-fs.target.wants"
-      "multi-user.target.wants"
-      "timers.target.wants"
-    ];
-
-  upstreamUserUnits =
-    [ "basic.target"
-      "initrd.target"
-      "exit.target"
-      "paths.target"
-      "shutdown.target"
-      "sockets.target"
-      "systemd-exit.service"
-      "timers.target"
     ];
 
   shellEscape = s: (replaceChars [ "\\" ] [ "\\\\" ] s);
@@ -372,30 +242,33 @@ let
         '';
     };
 
-  generateUnits = type: units: upstreamUnits: upstreamWants:
-    pkgs.runCommand "${type}-units" { preferLocalBuild = true; } ''
+  generateUnits = units: upstreamUnits: upstreamWants:
+    pkgs.runCommand "initrd-units" {
+      buildInputs = [ pkgs.nukeReferences ];
+      allowedReferences = [ "out" config.system.build.extraUtils ];
+    } ''
       mkdir -p $out
 
       # Copy the upstream systemd units we're interested in.
       for i in ${toString upstreamUnits}; do
-        fn=${systemd}/example/systemd/${type}/$i
+        fn=${systemd}/example/systemd/system/$i
         if ! [ -e $fn ]; then echo "missing $fn"; false; fi
         if [ -L $fn ]; then
           target="$(readlink "$fn")"
           if [ ''${target:0:3} = ../ ]; then
-            ln -s "$(readlink -f "$fn")" $out/
+            cp -v "$(readlink -f "$fn")" $out/
           else
             cp -pd $fn $out/
           fi
         else
-          ln -s $fn $out/
+          cp -v $fn $out/
         fi
       done
 
       # Copy .wants links, but only those that point to units that
       # we're interested in.
       for i in ${toString upstreamWants}; do
-        fn=${systemd}/example/systemd/${type}/$i
+        fn=${systemd}/example/systemd/system/$i
         if ! [ -e $fn ]; then echo "missing $fn"; false; fi
         x=$out/$(basename $fn)
         mkdir $x
@@ -408,9 +281,9 @@ let
 
       # Symlink all units provided listed in systemd.packages.
       for i in ${toString cfg.packages}; do
-        for fn in $i/etc/systemd/${type}/* $i/lib/systemd/${type}/*; do
+        for fn in $i/etc/systemd/system/* $i/lib/systemd/system/*; do
           if ! [[ "$fn" =~ .wants$ ]]; then
-            ln -s $fn $out/
+            cp -v $fn $out/
           fi
         done
       done
@@ -426,10 +299,10 @@ let
             ln -sfn /dev/null $out/$fn
           else
             mkdir $out/$fn.d
-            ln -s $i/$fn $out/$fn.d/overrides.conf
+            cp -v $i/$fn $out/$fn.d/overrides.conf
           fi
        else
-          ln -fs $i/$fn $out/
+          cp -v $i/$fn $out/
         fi
       done
 
@@ -447,19 +320,12 @@ let
             ln -sfn '../${name}' $out/'${name2}.requires'/
           '') unit.requiredBy) units)}
 
-      ${optionalString (type == "system") ''
-        # Stupid misc. symlinks.
-        ln -s ${cfg.defaultUnit} $out/default.target
-
-        ln -s rescue.target $out/kbrequest.target
-
-        mkdir -p $out/getty.target.wants/
-        ln -s ../autovt@tty1.service $out/getty.target.wants/
-
-        ln -s ../local-fs.target ../remote-fs.target ../network.target ../nss-lookup.target \
-              ../nss-user-lookup.target ../swap.target $out/multi-user.target.wants/
-      ''}
-    ''; # */
+      # Default target
+      ln -sfn ${cfg.defaultUnit} $out/default.target
+      
+      echo "patching units..."
+      find $out -type f -exec nuke-refs -p ${config.system.build.extraUtils} '{}' \;
+    '';
 
 in
 
@@ -551,9 +417,9 @@ in
     };
 
     systemd.defaultUnit = mkOption {
-      default = "multi-user.target";
+      default = "initrd.target";
       type = types.str;
-      description = "Default unit started when the system boots.";
+      description = "Default unit started when the initrd boots.";
     };
 
     systemd.globalEnvironment = mkOption {
@@ -575,110 +441,9 @@ in
       '';
     };
 
-    services.journald.console = mkOption {
-      default = "";
-      type = types.str;
-      description = "If non-empty, write log messages to the specified TTY device.";
-    };
-
-    services.journald.rateLimitInterval = mkOption {
-      default = "10s";
-      type = types.str;
-      description = ''
-        Configures the rate limiting interval that is applied to all
-        messages generated on the system. This rate limiting is applied
-        per-service, so that two services which log do not interfere with
-        each other's limit. The value may be specified in the following
-        units: s, min, h, ms, us. To turn off any kind of rate limiting,
-        set either value to 0.
-      '';
-    };
-
-    services.journald.rateLimitBurst = mkOption {
-      default = 100;
-      type = types.uniq types.int;
-      description = ''
-        Configures the rate limiting burst limit (number of messages per
-        interval) that is applied to all messages generated on the system.
-        This rate limiting is applied per-service, so that two services
-        which log do not interfere with each other's limit.
-      '';
-    };
-
-    services.journald.extraConfig = mkOption {
-      default = "";
-      type = types.lines;
-      example = "Storage=volatile";
-      description = ''
-        Extra config options for systemd-journald. See man journald.conf
-        for available options.
-      '';
-    };
-
-    services.journald.enableHttpGateway = mkOption {
-      default = false;
-      type = types.bool;
-      description = ''
-        Whether to enable the HTTP gateway to the journal.
-      '';
-    };
-
-    services.logind.extraConfig = mkOption {
-      default = "";
-      type = types.lines;
-      example = "HandleLidSwitch=ignore";
-      description = ''
-        Extra config options for systemd-logind. See man logind.conf for
-        available options.
-      '';
-    };
-
-    systemd.tmpfiles.rules = mkOption {
-      type = types.listOf types.str;
-      default = [];
-      example = [ "d /tmp 1777 root root 10d" ];
-      description = ''
-        Rules for creating and cleaning up temporary files
-        automatically. See
-        <citerefentry><refentrytitle>tmpfiles.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>
-        for the exact format. You should not use this option to create
-        files required by systemd services, since there is no
-        guarantee that <command>systemd-tmpfiles</command> runs when
-        the system is reconfigured using
-        <command>nixos-rebuild</command>.
-      '';
-    };
-
-    systemd.user.units = mkOption {
-      description = "Definition of systemd per-user units.";
-      default = {};
-      type = types.attrsOf types.optionSet;
-      options = { name, config, ... }:
-        { options = concreteUnitOptions;
-          config = {
-            unit = mkDefault (makeUnit name config);
-          };
-        };
-    };
-
-    systemd.user.services = mkOption {
-      default = {};
-      type = types.attrsOf types.optionSet;
-      options = [ serviceOptions unitConfig serviceConfig ];
-      description = "Definition of systemd per-user service units.";
-    };
-
-    systemd.user.sockets = mkOption {
-      default = {};
-      type = types.attrsOf types.optionSet;
-      options = [ socketOptions unitConfig ];
-      description = "Definition of systemd per-user socket units.";
-    };
-
-    systemd.additionalUpstreamSystemUnits = mkOption {
+    systemd.additionalUpstreamInitrdUnits = mkOption {
       default = [ ];
       type = types.listOf types.str;
-      example = [ "debug-shell.service" "systemd-quotacheck.service" ];
       description = ''
         Additional units shipped with systemd that shall be enabled.
       '';
@@ -691,9 +456,24 @@ in
 
   config = {
 
+    boot.initrd.systemd.units =
+      mapAttrs' (n: v: nameValuePair "${n}.target" (targetToUnit n v)) cfg.targets
+      // mapAttrs' (n: v: nameValuePair "${n}.service" (serviceToUnit n v)) cfg.services
+      // mapAttrs' (n: v: nameValuePair "${n}.socket" (socketToUnit n v)) cfg.sockets
+      // mapAttrs' (n: v: nameValuePair "${n}.timer" (timerToUnit n v)) cfg.timers
+      // mapAttrs' (n: v: nameValuePair "${n}.path" (pathToUnit n v)) cfg.paths
+      // listToAttrs (map
+                   (v: let n = escapeSystemdPath v.where;
+                       in nameValuePair "${n}.mount" (mountToUnit n v)) cfg.mounts)
+      // listToAttrs (map
+                   (v: let n = escapeSystemdPath v.where;
+                       in nameValuePair "${n}.automount" (automountToUnit n v)) cfg.automounts);
+
     boot.initrd.extraUtilsCommands = ''
-	    cp -v ${systemd}/lib/systemd/systemd $out/bin
+      cp -v ${systemd}/lib/systemd/systemd $out/bin
+      cp -v ${systemd}/bin/systemctl $out/bin
       cp -v ${pkgs.libcap}/lib/libcap.so.* $out/lib
+
     '';
 
     boot.initrd.extraUtilsCommandsPatch = ''
@@ -703,12 +483,17 @@ in
               patchelf --set-rpath $out/lib $i || true
           fi
       done
-      
     '';
 
     boot.initrd.extraUtilsCommandsTest = ''
       $out/bin/systemd --version
     '';
-    
+
+    boot.initrd.extraContents = [
+      { object = generateUnits cfg.units upstreamInitrdUnits upstreamInitrdWants;
+        symlink = "/etc/systemd/system";
+      }
+    ];
+      
   };
 }
