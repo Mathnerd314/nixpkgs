@@ -474,8 +474,9 @@ in
       cp -v ${systemd}/bin/systemctl $out/bin
       cp -v ${pkgs.libcap}/lib/libcap.so.* $out/lib
 
+      # Fake nix
     '';
-
+    
     boot.initrd.extraUtilsCommandsPatch = ''
       for i in $out/lib/libcap.so.*; do
           if ! test -L $i; then
@@ -493,6 +494,18 @@ in
       { object = generateUnits cfg.units upstreamInitrdUnits upstreamInitrdWants;
         symlink = "/etc/systemd/system";
       }
+      
+      { object = let utils = config.system.build.extraUtils; in
+        pkgs.runCommand "fake-utillinux" { allowedReferences = [ "out" utils ]; } ''
+        mkdir -p $out/bin $out/sbin
+        ln -sf ${utils}/bin/mount $out/bin/
+        ln -sf ${utils}/bin/umount $out/bin/
+        ln -sf ${utils}/bin/swapon $out/sbin/
+        ln -sf ${utils}/bin/swapoff $out/sbin/
+        '';
+        symlink = "/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-${pkgs.utillinux.name}";
+      }
+
     ];
       
   };

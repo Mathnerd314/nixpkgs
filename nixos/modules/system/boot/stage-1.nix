@@ -82,7 +82,7 @@ let
       stripDirs "lib bin" "-s"
 
       # Run patchelf to make the programs refer to the copied libraries.
-      for i in $out/bin/* $out/lib/*; do if ! test -L $i; then nuke-refs -p $out $i; fi; done
+      for i in $out/bin/* $out/lib/*; do if ! test -L $i; then nuke-refs $i; fi; done
 
       for i in $out/bin/*; do
           if ! test -L $i; then
@@ -374,7 +374,7 @@ in
 
     boot.initrd.systemd.mounts = map (fs:
       { what = fs.device;
-        where = fs.mountPoint;
+        where = if fs.mountPoint == "/" then "/sysroot" else "/sysroot" + fs.mountPoint;
         type = fs.fsType;
         options = fs.options;
         unitConfig = { DefaultDependencies = false; };
