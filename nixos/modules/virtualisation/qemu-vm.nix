@@ -70,7 +70,7 @@ let
             -drive file=$NIX_DISK_IMAGE,if=virtio,cache=writeback,werror=report \
             -kernel ${config.system.build.toplevel}/kernel \
             -initrd ${config.system.build.toplevel}/initrd \
-            -append "$(cat ${config.system.build.toplevel}/kernel-params) init=${config.system.build.toplevel}/init regInfo=${regInfo} ${kernelConsole} $QEMU_KERNEL_PARAMS" \
+            -append "$(cat ${config.system.build.toplevel}/kernel-params) init=${config.system.build.toplevel}/init regInfo=${regInfo} ${kernelConsole} systemd.log_level=debug systemd.log_target=console $QEMU_KERNEL_PARAMS" \
           ''} \
           $extraDisks \
           ${qemuGraphics} \
@@ -351,7 +351,7 @@ in
       { "/nix/store" =
           { fsType = "unionfs-fuse";
             device = "unionfs";
-            options = "allow_other,cow,nonempty,chroot=/mnt-root,max_files=32768,hide_meta_files,dirs=/nix/.rw-store=rw:/nix/.ro-store=ro";
+            options = "allow_other,cow,nonempty,chroot=/sysroot,max_files=32768,hide_meta_files,dirs=/nix/.rw-store=rw:/nix/.ro-store=ro";
           };
       } // optionalAttrs (cfg.writableStore && cfg.writableStoreUseTmpfs)
       { "/nix/.rw-store" =

@@ -47,7 +47,19 @@ let
       "initrd-udevadm-cleanup-db.service"
       "systemd-journald.service"
       "systemd-journald.socket"
-      
+      "systemd-udevd.service"
+      "systemd-udevd-control.socket"
+      "systemd-udevd-kernel.socket"
+      "shutdown.target"
+      "umount.target"
+      "final.target"
+      "reboot.target"
+      "systemd-reboot.service"
+      "poweroff.target"
+      "systemd-poweroff.service"
+      "halt.target"
+      "systemd-halt.service"
+
       # Rescue mode.
       "rescue.target"
       "rescue.service"
@@ -314,8 +326,12 @@ let
           cp -v $i/$fn $out/
         fi
       done
+      
       # Do not parse /sysroot/etc/fstab since the system is not activated yet
       ln -sfn /dev/null $out/initrd-parse-etc.service
+
+      # Fix systemd service bug, udev cleanup must happen before mounting file systems
+      #sed '/After/c\After=systemd-udevd.service systemd-udevd-control.socket systemd-udevd-kernel.socket initrd-fs.target' -i $out/initrd-udevadm-cleanup-db.service
 
       # Created .wants and .requires symlinks from the wantedBy and
       # requiredBy options.
