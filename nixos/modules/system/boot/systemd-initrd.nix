@@ -25,19 +25,28 @@ let
         '';
 
   upstreamInitrdUnits =
-    [ # Targets.
+    [ # Sysinit targets.
       "basic.target"
       "sysinit.target"
       "sockets.target"
-      "initrd.target"
       "timers.target"
       "slices.target"
       "paths.target"
 
-      # Initrd units.
+      # Initrd targets.
+      "initrd.target"
       "initrd-root-fs.target"
       "initrd-fs.target"
+      "initrd-switch-root.target"
+
+      # Initrd services.
       "initrd-parse-etc.service"
+      "initrd-switch-root.service"
+
+      # Services.
+      "initrd-udevadm-cleanup-db.service"
+      "systemd-journald.service"
+      "systemd-journald.socket"
       
       # Rescue mode.
       "rescue.target"
@@ -305,6 +314,8 @@ let
           cp -v $i/$fn $out/
         fi
       done
+      # Do not parse /sysroot/etc/fstab since the system is not activated yet
+      ln -sfn /dev/null $out/initrd-parse-etc.service
 
       # Created .wants and .requires symlinks from the wantedBy and
       # requiredBy options.
@@ -320,11 +331,13 @@ let
             ln -sfn '../${name}' $out/'${name2}.requires'/
           '') unit.requiredBy) units)}
 
+      sed '/ExecStartPre/c\ExecStartPre=${config.system.build.extraUtils}/bin/journalctl -xb --no-pager' -i $out/emergency.service
       # Default target
       ln -sfn ${cfg.defaultUnit} $out/default.target
       
       echo "patching units..."
       find $out -type f -exec nuke-refs -p ${config.system.build.extraUtils} '{}' \;
+      find $out -type f -exec sed 's|/lib/systemd/|/bin/|g' -i '{}' \;
     '';
 
 in
@@ -417,7 +430,7 @@ in
     };
 
     systemd.defaultUnit = mkOption {
-      default = "initrd.target";
+      default = "initrd-switch-root.target";
       type = types.str;
       description = "Default unit started when the initrd boots.";
     };
@@ -471,14 +484,17 @@ in
 
     boot.initrd.extraUtilsCommands = ''
       cp -v ${systemd}/lib/systemd/systemd $out/bin
+      cp -v ${systemd}/lib/systemd/systemd-journald $out/bin
       cp -v ${systemd}/bin/systemctl $out/bin
+      cp -v ${systemd}/bin/journalctl $out/bin
       cp -v ${pkgs.libcap}/lib/libcap.so.* $out/lib
-
-      # Fake nix
+      cp -v ${pkgs.lzma}/lib/liblzma.so.* $out/lib
+      cp -v ${pkgs.libgcrypt}/lib/libgcrypt.so.* $out/lib
+      cp -v ${pkgs.libgpgerror}/lib/libgpg-error.so.* $out/lib
     '';
     
     boot.initrd.extraUtilsCommandsPatch = ''
-      for i in $out/lib/libcap.so.*; do
+      for i in $out/lib/libcap.so.* $out/lib/libblkid.so.* $out/lib/libattr.so.* $out/lib/libgcrypt.so.* $out/lib/libacl.so.* $out/lib/libuuid.so.*; do
           if ! test -L $i; then
               echo "patching $i..."
               patchelf --set-rpath $out/lib $i || true

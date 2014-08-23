@@ -379,6 +379,7 @@ in
         options = fs.options;
         unitConfig = { DefaultDependencies = false; };
         wantedBy = if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
+        before = if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
       }
     ) fileSystems;
 
