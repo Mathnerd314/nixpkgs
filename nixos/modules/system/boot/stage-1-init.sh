@@ -141,6 +141,8 @@ mkdir -p /dev/.mdadm
 # Load boot-time keymap before any LVM/LUKS initialization
 @extraUtils@/bin/busybox loadkmap < "@busyboxKeymap@"
 
-exec env -i $(type -P systemd)
+mkdir -p $targetRoot
+
+exec $(type -P systemd)
 
 fail # should never be reached

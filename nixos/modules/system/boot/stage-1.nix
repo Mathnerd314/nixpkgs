@@ -94,8 +94,6 @@ let
           fi
       done
 
-      ${config.boot.initrd.extraUtilsCommandsPatch}
-
       # Make sure that the patchelf'ed binaries still work.
       echo "testing patched programs..."
       $out/bin/ash -c 'echo hello world' | grep "hello world"
@@ -120,6 +118,7 @@ let
 
   udevRules = pkgs.stdenv.mkDerivation {
     name = "udev-rules";
+    allowedReferences = [ "out" extraUtils ];
     buildCommand = ''
       mkdir -p $out
 
@@ -130,6 +129,7 @@ let
       cp -v ${udev}/lib/udev/rules.d/80-drivers.rules $out/
       cp -v ${pkgs.lvm2}/lib/udev/rules.d/*.rules $out/
       cp -v ${pkgs.mdadm}/lib/udev/rules.d/*.rules $out/
+      ${config.boot.initrd.extraUdevCommands}
 
       for i in $out/*.rules; do
           substituteInPlace $i \
@@ -320,6 +320,16 @@ in
         Additional objects to be added to the initrd.
       '';
     };
+
+    boot.initrd.extraUdevCommands = mkOption {
+      internal = true;
+      default = "";
+      type = types.lines;
+      description = ''
+        Shell commands to be executed when installing udev
+        rules in the initrd.
+      '';
+    };
     
     boot.initrd.compressor = mkOption {
       internal = true;
@@ -377,9 +387,8 @@ in
         where = if fs.mountPoint == "/" then "/sysroot" else "/sysroot" + fs.mountPoint;
         type = fs.fsType;
         options = fs.options;
-        unitConfig = { DefaultDependencies = false; };
-        wantedBy = if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
-        before = [ "initrd-udevadm-cleanup-db.service" ] ++ (if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
+        requiredBy = if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
+        before = if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
       }
     ) fileSystems;
 

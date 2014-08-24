@@ -8,6 +8,8 @@ let
 
   cfg = config.boot.initrd.systemd;
 
+  extraUtils = config.system.build.extraUtils;
+
   systemd = cfg.package;
 
   makeUnit = name: unit:
@@ -32,6 +34,8 @@ let
       "timers.target"
       "slices.target"
       "paths.target"
+      "shutdown.target"
+      "umount.target"
 
       # Initrd targets.
       "initrd.target"
@@ -42,7 +46,8 @@ let
       # Initrd services.
       "initrd-parse-etc.service"
       "initrd-switch-root.service"
-
+      "initrd-cleanup.service"
+      
       # Services.
       "initrd-udevadm-cleanup-db.service"
       "systemd-journald.service"
@@ -50,15 +55,18 @@ let
       "systemd-udevd.service"
       "systemd-udevd-control.socket"
       "systemd-udevd-kernel.socket"
-      "shutdown.target"
-      "umount.target"
-      "final.target"
-      "reboot.target"
-      "systemd-reboot.service"
-      "poweroff.target"
-      "systemd-poweroff.service"
-      "halt.target"
-      "systemd-halt.service"
+      "systemd-udev-trigger.service"
+      "systemd-udev-settle.service"
+
+      # Kernel module loading.
+      "systemd-modules-load.service"
+      "kmod-static-nodes.service"
+
+      # Password entry.
+      "systemd-ask-password-console.path"
+      "systemd-ask-password-console.service"
+      "systemd-ask-password-wall.path"
+      "systemd-ask-password-wall.service"
 
       # Rescue mode.
       "rescue.target"
@@ -77,8 +85,7 @@ let
   shellEscape = s: (replaceChars [ "\\" ] [ "\\\\" ] s);
 
   makeJobScript = name: text:
-    let x = pkgs.writeTextFile { name = "unit-script"; executable = true; destination = "/bin/${shellEscape name}"; inherit text; };
-    in "${x}/bin/${shellEscape name}";
+    { inherit name; path = pkgs.writeTextFile { name = "unit-script"; executable = true; inherit text; }; };
 
   unitConfig = { name, config, ... }: {
     config = {
@@ -105,48 +112,20 @@ let
     };
   };
 
+
   serviceConfig = { name, config, ... }: {
     config = mkMerge
-      [ { # Default path for systemd services.  Should be quite minimal.
-          path =
-            [ pkgs.coreutils
-              pkgs.findutils
-              pkgs.gnugrep
-              pkgs.gnused
-              systemd
-            ];
-          environment.PATH = config.path;
-        }
+      [ 
         (mkIf (config.preStart != "")
-          { serviceConfig.ExecStartPre = makeJobScript "${name}-pre-start" ''
-              #! ${pkgs.stdenv.shell} -e
-              ${config.preStart}
-            '';
-          })
+          { serviceConfig.ExecStartPre = "${unitScripts}/bin/${name}-pre-start"; })
         (mkIf (config.script != "")
-          { serviceConfig.ExecStart = makeJobScript "${name}-start" ''
-              #! ${pkgs.stdenv.shell} -e
-              ${config.script}
-            '' + " " + config.scriptArgs;
-          })
+          { serviceConfig.ExecStart = "${unitScripts}/bin/${name}-start"; })
         (mkIf (config.postStart != "")
-          { serviceConfig.ExecStartPost = makeJobScript "${name}-post-start" ''
-              #! ${pkgs.stdenv.shell} -e
-              ${config.postStart}
-            '';
-          })
+          { serviceConfig.ExecStartPost = "${unitScripts}/bin/${name}-post-start"; })
         (mkIf (config.preStop != "")
-          { serviceConfig.ExecStop = makeJobScript "${name}-pre-stop" ''
-              #! ${pkgs.stdenv.shell} -e
-              ${config.preStop}
-            '';
-          })
+          { serviceConfig.ExecStop = "${unitScripts}/bin/${name}-pre-stop"; })
         (mkIf (config.postStop != "")
-          { serviceConfig.ExecStopPost = makeJobScript "${name}-post-stop" ''
-              #! ${pkgs.stdenv.shell} -e
-              ${config.postStop}
-            '';
-          })
+          { serviceConfig.ExecStopPost = "${unitScripts}/bin/${name}-post-stop"; })
       ];
   };
 
@@ -263,10 +242,47 @@ let
         '';
     };
 
+  makeScripts = name: config:
+    (optional (config.preStart != "")
+     (makeJobScript "${name}-pre-start" ''
+      #! ${extraUtils}/bin/ash -e
+      ${config.preStart}
+      '')) ++
+    (optional (config.script != "")
+     (makeJobScript "${name}-start" ''
+      #! ${extraUtils}/bin/ash -e
+      ${config.script}
+      '')) ++
+    (optional (config.postStart != "")
+     (makeJobScript "${name}-post-start" ''
+      #! ${extraUtils}/bin/ash -e
+      ${config.postStart}
+      '')) ++
+    (optional (config.preStop != "")
+     (makeJobScript "${name}-pre-stop" ''
+      #! ${extraUtils}/bin/ash -e
+      ${config.preStop}
+      '')) ++
+    (optional (config.postStop != "")
+     (makeJobScript "${name}-post-stop" ''
+      #! ${extraUtils}/bin/ash -e
+      ${config.postStop}
+      ''));
+
+  unitScripts =
+    let 
+      scripts = concatLists (mapAttrsToList (n: v: makeScripts n v) cfg.services);
+    in pkgs.runCommand "unit-scripts" {
+      allowedReferences = [ "out" extraUtils ];
+    } ''
+    echo "creating unit scripts..."
+    mkdir -p $out/bin
+    ${concatMapStrings (script: "cp ${script.path} $out/bin/${script.name}\n") scripts}
+    '';
+
   generateUnits = units: upstreamUnits: upstreamWants:
     pkgs.runCommand "initrd-units" {
-      buildInputs = [ pkgs.nukeReferences ];
-      allowedReferences = [ "out" config.system.build.extraUtils ];
+      allowedReferences = [ "out" extraUtils unitScripts ];
     } ''
       mkdir -p $out
 
@@ -330,9 +346,6 @@ let
       # Do not parse /sysroot/etc/fstab since the system is not activated yet
       ln -sfn /dev/null $out/initrd-parse-etc.service
 
-      # Fix systemd service bug, udev cleanup must happen before mounting file systems
-      #sed '/After/c\After=systemd-udevd.service systemd-udevd-control.socket systemd-udevd-kernel.socket initrd-fs.target' -i $out/initrd-udevadm-cleanup-db.service
-
       # Created .wants and .requires symlinks from the wantedBy and
       # requiredBy options.
       ${concatStrings (mapAttrsToList (name: unit:
@@ -347,13 +360,24 @@ let
             ln -sfn '../${name}' $out/'${name2}.requires'/
           '') unit.requiredBy) units)}
 
-      sed '/ExecStartPre/c\ExecStartPre=${config.system.build.extraUtils}/bin/journalctl -xb --no-pager' -i $out/emergency.service
+      # Emergency shell
+      sed '/ExecStart=/c\ExecStart=-${extraUtils}/bin/ash' -i $out/emergency.service
+
       # Default target
       ln -sfn ${cfg.defaultUnit} $out/default.target
       
       echo "patching units..."
-      find $out -type f -exec nuke-refs -p ${config.system.build.extraUtils} '{}' \;
-      find $out -type f -exec sed 's|/lib/systemd/|/bin/|g' -i '{}' \;
+      for i in $out/*; do
+        if [ -f "$i" ]; then
+          substituteInPlace "$i" \
+            --replace ${pkgs.sysvtools}/bin/ ${extraUtils}/bin/ \
+            --replace ${pkgs.sysvtools}/sbin/ ${extraUtils}/bin/ \
+            --replace ${systemd}/bin/ ${extraUtils}/bin/ \
+            --replace ${systemd}/lib/systemd/ ${extraUtils}/bin/ \
+            --replace ${pkgs.coreutils}/bin/ ${extraUtils}/bin/ \
+            --replace ${pkgs.kmod}/bin/ ${extraUtils}/bin/
+        fi
+      done
     '';
 
 in
@@ -446,7 +470,7 @@ in
     };
 
     systemd.defaultUnit = mkOption {
-      default = "initrd-switch-root.target";
+      default = "initrd.target";
       type = types.str;
       description = "Default unit started when the initrd boots.";
     };
@@ -501,6 +525,8 @@ in
     boot.initrd.extraUtilsCommands = ''
       cp -v ${systemd}/lib/systemd/systemd $out/bin
       cp -v ${systemd}/lib/systemd/systemd-journald $out/bin
+      cp -v ${systemd}/lib/systemd/systemd-sysctl $out/bin
+      cp -v ${systemd}/lib/systemd/systemd-modules-load $out/bin
       cp -v ${systemd}/bin/systemctl $out/bin
       cp -v ${systemd}/bin/journalctl $out/bin
       cp -v ${pkgs.libcap}/lib/libcap.so.* $out/lib
@@ -522,18 +548,30 @@ in
       $out/bin/systemd --version
     '';
 
+    boot.initrd.extraUdevCommands = ''
+      cp -v ${systemd}/lib/udev/rules.d/99-systemd.rules $out/
+      substituteInPlace $out/99-systemd.rules --replace ${systemd}/lib/systemd/systemd-sysctl ${extraUtils}/bin/systemd-sysctl
+    '';
+      
     boot.initrd.extraContents = [
+
       { object = generateUnits cfg.units upstreamInitrdUnits upstreamInitrdWants;
         symlink = "/etc/systemd/system";
       }
+
+      { object = pkgs.writeText "initrd-system.conf" ''
+          [Manager]
+          DefaultEnvironment=PATH=${extraUtils}/bin LD_LIBRARY_PATH=${extraUtils}/lib
+        '';
+        symlink = "/etc/systemd/system.conf";
+      }
       
-      { object = let utils = config.system.build.extraUtils; in
-        pkgs.runCommand "fake-utillinux" { allowedReferences = [ "out" utils ]; } ''
-        mkdir -p $out/bin $out/sbin
-        ln -sf ${utils}/bin/mount $out/bin/
-        ln -sf ${utils}/bin/umount $out/bin/
-        ln -sf ${utils}/bin/swapon $out/sbin/
-        ln -sf ${utils}/bin/swapoff $out/sbin/
+      { object = pkgs.runCommand "fake-utillinux" { allowedReferences = [ "out" extraUtils ]; } ''
+          mkdir -p $out/bin $out/sbin
+          ln -sf ${extraUtils}/bin/mount $out/bin/
+          ln -sf ${extraUtils}/bin/umount $out/bin/
+          ln -sf ${extraUtils}/bin/swapon $out/sbin/
+          ln -sf ${extraUtils}/bin/swapoff $out/sbin/
         '';
         symlink = "/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-${pkgs.utillinux.name}";
       }

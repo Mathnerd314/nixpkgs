@@ -281,8 +281,8 @@ in
         cp -vf --remove-destination ${pkgs.e2fsprogs}/sbin/mke2fs $out/bin
       '';
 
-    boot.initrd.postDeviceCommands =
-      ''
+    boot.initrd.systemd.services.vdaDisk = {
+      script = ''
         # If the disk image appears to be empty, run mke2fs to
         # initialise.
         FSTYPE=$(blkid -o value -s TYPE /dev/vda || true)
@@ -291,8 +291,13 @@ in
         fi
       '';
 
-    boot.initrd.postMountCommands =
-      ''
+      requiredBy = [ "sysroot.mount" ];
+      before = [ "sysroot.mount" ];
+      serviceConfig.Type = "oneshot";
+    };
+
+    boot.initrd.systemd.services.setupRoot = {
+      script = ''
         # Mark this as a NixOS machine.
         mkdir -p $targetRoot/etc
         echo -n > $targetRoot/etc/NIXOS
@@ -302,6 +307,9 @@ in
 
         mkdir -p $targetRoot/boot
       '';
+
+      after = [ "initrd-root-fs.target" ];
+    };
 
     # After booting, register the closure of the paths in
     # `virtualisation.pathsInNixDB' in the Nix database in the VM.  This
