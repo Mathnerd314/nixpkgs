@@ -120,10 +120,6 @@ done
 mkdir -p /lib
 ln -s @modulesClosure@/lib/modules /lib/modules
 echo @extraUtils@/bin/modprobe > /proc/sys/kernel/modprobe
-for i in @kernelModules@; do
-    echo "loading module $(basename $i)..."
-    modprobe $i || true
-done
 
 # Load boot-time keymap before any LVM/LUKS initialization
 @extraUtils@/bin/busybox loadkmap < "@busyboxKeymap@"

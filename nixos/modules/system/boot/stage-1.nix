@@ -219,6 +219,9 @@ let
         { object = udevRules;
           symlink = "/etc/udev/rules.d";
         }
+        { object = pkgs.writeText "initrd-modules" (concatStringsSep "\n" config.boot.initrd.kernelModules);
+          symlink = "/etc/modules-load.d/nixos.conf";
+        }
       ] ++ config.boot.initrd.extraContents;
   };
 
