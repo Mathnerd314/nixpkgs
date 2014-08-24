@@ -165,6 +165,7 @@ let
 
   commonUnitText = def: ''
       [Unit]
+      DefaultDependencies=no
       ${attrsToSection def.unitConfig}
     '';
 

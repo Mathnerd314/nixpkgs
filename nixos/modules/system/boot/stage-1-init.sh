@@ -58,4 +58,4 @@ done
 # Load boot-time keymap before any LVM/LUKS initialization
 @extraUtils@/bin/busybox loadkmap < "@busyboxKeymap@"
 
-exec systemds
+exec systemd

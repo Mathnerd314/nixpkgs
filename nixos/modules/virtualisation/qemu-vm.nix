@@ -293,22 +293,27 @@ in
 
       requiredBy = [ "sysroot.mount" ];
       before = [ "sysroot.mount" ];
+      wants = [ "dev-vda.device" ];
+      after = [ "dev-vda.device" ];
       serviceConfig.Type = "oneshot";
     };
 
     boot.initrd.systemd.services.setupRoot = {
       script = ''
         # Mark this as a NixOS machine.
-        mkdir -p $targetRoot/etc
-        echo -n > $targetRoot/etc/NIXOS
+        mkdir -p /sysroot/etc
+        echo -n > /sysroot/etc/NIXOS
 
         # Fix the permissions on /tmp.
-        chmod 1777 $targetRoot/tmp
+        chmod 1777 /sysroot/tmp
 
-        mkdir -p $targetRoot/boot
+        mkdir -p /sysroot/boot
       '';
 
+      requiredBy = [ "initrd.target" ];
+      before = [ "initrd.target" ];
       after = [ "initrd-root-fs.target" ];
+      serviceConfig.Type = "oneshot";
     };
 
     # After booting, register the closure of the paths in
