@@ -344,7 +344,7 @@ let
       done
       
       # Do not parse /sysroot/etc/fstab since the system is not activated yet
-      ln -sfn /dev/null $out/initrd-parse-etc.service
+      # ln -sfn /dev/null $out/initrd-parse-etc.service
 
       # Created .wants and .requires symlinks from the wantedBy and
       # requiredBy options.
