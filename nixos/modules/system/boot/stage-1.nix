@@ -176,7 +176,7 @@ let
 
     isExecutable = true;
 
-    inherit udevRules extraUtils modulesClosure busyboxKeymap;
+    inherit extraUtils modulesClosure busyboxKeymap;
 
     inherit (config.boot) resumeDevice devSize runSize;
 
@@ -215,6 +215,9 @@ let
             src = "${pkgs.kmod-blacklist-ubuntu}/modprobe.conf";
           };
           symlink = "/etc/modprobe.d/ubuntu.conf";
+        }
+        { object = udevRules;
+          symlink = "/etc/udev/rules.d";
         }
       ] ++ config.boot.initrd.extraContents;
   };

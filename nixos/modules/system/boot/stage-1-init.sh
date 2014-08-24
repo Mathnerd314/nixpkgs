@@ -6,7 +6,8 @@ console=tty1
 export LD_LIBRARY_PATH=@extraUtils@/lib
 export PATH=@extraUtils@/bin
 ln -s @extraUtils@/bin /bin
-
+ln -s @extraUtils@/bin /sbin
+mkdir -p /dev/.mdadm /sysroot
 
 fail() {
     if [ -n "$panicOnFail" ]; then exit 1; fi
@@ -68,7 +69,6 @@ touch /etc/fstab # to shut up mount
 ln -s /proc/mounts /etc/mtab # needed by systemd
 
 # Process the kernel command line.
-export stage2Init=/init
 for o in $(cat /proc/cmdline); do
     case $o in
         console=*)
@@ -76,10 +76,6 @@ for o in $(cat /proc/cmdline); do
             params=$2
             set -- $(IFS=,; echo $params)
             console=$1
-            ;;
-        init=*)
-            set -- $(IFS==; echo $o)
-            stage2Init=$2
             ;;
         boot.trace|debugtrace)
             # Show each command.
@@ -129,17 +125,7 @@ for i in @kernelModules@; do
     modprobe $i || true
 done
 
-# Set up udev rules
-echo "running udev..."
-mkdir -p /etc/udev
-ln -sfn @udevRules@ /etc/udev/rules.d
-mkdir -p /dev/.mdadm
-
 # Load boot-time keymap before any LVM/LUKS initialization
 @extraUtils@/bin/busybox loadkmap < "@busyboxKeymap@"
 
-mkdir -p $targetRoot
-
-exec $(type -P systemd)
-
-fail # should never be reached
+exec systemd

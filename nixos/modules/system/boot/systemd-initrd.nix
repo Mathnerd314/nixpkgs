@@ -389,7 +389,7 @@ in
   options.boot.initrd = {
 
     systemd.package = mkOption {
-      default = pkgs.systemd.override { pamSupport = false; };
+      default = pkgs.systemd.override { targetInitrd = true; };
       type = types.package;
       description = "The systemd package.";
     };
@@ -565,18 +565,8 @@ in
         '';
         symlink = "/etc/systemd/system.conf";
       }
-      
-      { object = pkgs.runCommand "fake-utillinux" { allowedReferences = [ "out" extraUtils ]; } ''
-          mkdir -p $out/bin $out/sbin
-          ln -sf ${extraUtils}/bin/mount $out/bin/
-          ln -sf ${extraUtils}/bin/umount $out/bin/
-          ln -sf ${extraUtils}/bin/swapon $out/sbin/
-          ln -sf ${extraUtils}/bin/swapoff $out/sbin/
-        '';
-        symlink = "/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-${pkgs.utillinux.name}";
-      }
 
     ];
-      
+
   };
 }
