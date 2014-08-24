@@ -129,9 +129,6 @@ for i in @kernelModules@; do
     modprobe $i || true
 done
 
-# Restore /proc/sys/kernel/modprobe to its original value.
-echo /sbin/modprobe > /proc/sys/kernel/modprobe
-
 # Set up udev rules
 echo "running udev..."
 mkdir -p /etc/udev
