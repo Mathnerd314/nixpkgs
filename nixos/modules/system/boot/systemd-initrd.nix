@@ -361,7 +361,7 @@ let
           '') unit.requiredBy) units)}
 
       # Emergency shell
-      sed '/ExecStart=/c\ExecStart=-${extraUtils}/bin/ash' -i $out/emergency.service
+      sed '/ExecStart=/c\ExecStart=${extraUtils}/bin/emergency.sh' -i $out/emergency.service
 
       # Default target
       ln -sfn ${cfg.defaultUnit} $out/default.target
@@ -535,15 +535,6 @@ in
       cp -v ${pkgs.libgpgerror}/lib/libgpg-error.so.* $out/lib
     '';
     
-    boot.initrd.extraUtilsCommandsPatch = ''
-      for i in $out/lib/libcap.so.* $out/lib/libblkid.so.* $out/lib/libattr.so.* $out/lib/libgcrypt.so.* $out/lib/libacl.so.* $out/lib/libuuid.so.*; do
-          if ! test -L $i; then
-              echo "patching $i..."
-              patchelf --set-rpath $out/lib $i || true
-          fi
-      done
-    '';
-
     boot.initrd.extraUtilsCommandsTest = ''
       $out/bin/systemd --version
     '';

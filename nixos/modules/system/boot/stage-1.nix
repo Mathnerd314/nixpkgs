@@ -75,6 +75,9 @@ let
       cp -v ${pkgs.kmod}/bin/kmod $out/bin/
       ln -sf kmod $out/bin/modprobe
 
+      # Copy the emergency script.
+      cp -v ${config.boot.initrd.emergencyScript} $out/bin/emergency.sh
+
       ${config.boot.initrd.extraUtilsCommands}
 
       # Strip binaries further than normal.
@@ -296,16 +299,6 @@ in
       '';
     };
 
-    boot.initrd.extraUtilsCommandsPatch = mkOption {
-      internal = true;
-      default = "";
-      type = types.lines;
-      description = ''
-        Shell commands to be executed in the builder to patch
-        further binaries and libraries.
-      '';
-    };
-
     boot.initrd.extraUtilsCommandsTest = mkOption {
       internal = true;
       default = "";
@@ -350,6 +343,19 @@ in
       example = [ "btrfs" ];
       type = types.listOf types.string;
       description = "Names of supported filesystem types in the initial ramdisk.";
+    };
+
+    boot.initrd.emergencyScript = mkOption {
+      default = ./emergency.sh;
+      type = types.path;
+      description = "Script to execute in case of emergency.";
+      apply = path: pkgs.substituteAll {
+        src = path;
+
+        shell = "/bin/ash";
+
+        isExecutable = true;
+      };
     };
 
     fileSystems = mkOption {
