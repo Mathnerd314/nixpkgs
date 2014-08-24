@@ -70,7 +70,7 @@ let
             -drive file=$NIX_DISK_IMAGE,if=virtio,cache=writeback,werror=report \
             -kernel ${config.system.build.toplevel}/kernel \
             -initrd ${config.system.build.toplevel}/initrd \
-            -append "$(cat ${config.system.build.toplevel}/kernel-params) init=${config.system.build.toplevel}/init regInfo=${regInfo} ${kernelConsole} systemd.log_level=debug systemd.log_target=console $QEMU_KERNEL_PARAMS" \
+            -append "$(cat ${config.system.build.toplevel}/kernel-params) init=${config.system.build.toplevel}/init regInfo=${regInfo} ${kernelConsole} $QEMU_KERNEL_PARAMS" \
           ''} \
           $extraDisks \
           ${qemuGraphics} \
