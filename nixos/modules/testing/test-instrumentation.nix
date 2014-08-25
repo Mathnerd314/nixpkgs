@@ -66,7 +66,7 @@ let kernel = config.boot.kernelPackages.kernel; in
     # Panic if an error occurs in stage 1 (rather than waiting for
     # user intervention).
     boot.kernelParams =
-      [ "console=ttyS0" "boot.shell_on_fail"  ];
+      [ "console=ttyS0" "panic=1" "boot.panic_on_fail" ];
 
     # `xwininfo' is used by the test driver to query open windows.
     environment.systemPackages = [ pkgs.xorg.xwininfo ];
