@@ -24,7 +24,7 @@ for o in $(cat /proc/cmdline); do
     esac
 done
 
-if [ -n "$panicOnFail" ]; then exit 1; fi
+if [ "$pid" -eq 1 -a -n "$panicOnFail" ]; then exit 1; fi
 
 # If starting stage 2 failed, allow the user to repair the problem
 # in an interactive shell.
