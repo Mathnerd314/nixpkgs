@@ -346,11 +346,11 @@ in
     };
 
     boot.initrd.emergencyScript = mkOption {
-      default = ./emergency.sh;
-      type = types.path;
+      default = null;
+      type = types.nullOr types.path;
       description = "Script to execute in case of emergency.";
       apply = path: pkgs.substituteAll {
-        src = path;
+        src = if path == null then ./emergency.sh else path;
 
         shell = "/bin/ash";
 
