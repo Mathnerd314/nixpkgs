@@ -348,7 +348,10 @@ in
     boot.initrd.emergencyScript = mkOption {
       default = null;
       type = types.nullOr types.path;
-      description = "Script to execute in case of emergency.";
+      description = ''
+        Script to execute in case of emergency.
+        If not provided, the default script will be used.
+      '';
       apply = path: pkgs.substituteAll {
         src = if path == null then ./emergency.sh else path;
 

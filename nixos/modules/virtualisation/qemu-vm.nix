@@ -293,8 +293,6 @@ in
 
       requiredBy = [ "sysroot.mount" ];
       before = [ "sysroot.mount" ];
-      wants = [ "dev-vda.device" ];
-      after = [ "dev-vda.device" ];
       serviceConfig.Type = "oneshot";
     };
 
@@ -310,8 +308,8 @@ in
         mkdir -p /sysroot/boot
       '';
 
-      requiredBy = [ "initrd.target" ];
-      before = [ "initrd.target" ];
+      requiredBy = [ "default.target" ];
+      before = [ "default.target" ];
       after = [ "initrd-root-fs.target" ];
       serviceConfig.Type = "oneshot";
     };
