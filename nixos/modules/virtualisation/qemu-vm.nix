@@ -293,7 +293,10 @@ in
 
       requiredBy = [ "sysroot.mount" ];
       before = [ "sysroot.mount" ];
-      serviceConfig.Type = "oneshot";
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
     };
 
     boot.initrd.systemd.services.setupRoot = {
@@ -308,10 +311,13 @@ in
         mkdir -p /sysroot/boot
       '';
 
-      requiredBy = [ "default.target" ];
-      before = [ "default.target" ];
+      wantedBy = [ "initrd.target" ];
+      before = [ "initrd.target" ];
       after = [ "initrd-root-fs.target" ];
-      serviceConfig.Type = "oneshot";
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
     };
 
     # After booting, register the closure of the paths in
