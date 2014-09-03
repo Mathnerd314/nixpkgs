@@ -37,6 +37,8 @@ let
       "shutdown.target"
       "umount.target"
 
+      "system.slice"
+
       # Initrd targets.
       "initrd.target"
       "initrd-root-fs.target"
@@ -57,6 +59,7 @@ let
       "systemd-udevd-kernel.socket"
       "systemd-udev-trigger.service"
       "systemd-udev-settle.service"
+      #"systemd-vconsole-setup.service"
 
       # Kernel module loading.
       "systemd-modules-load.service"
@@ -165,6 +168,7 @@ let
 
   commonUnitText = def: ''
       [Unit]
+      ConditionPathExists=/etc/initrd-release
       ${attrsToSection def.unitConfig}
     '';
 
@@ -363,12 +367,12 @@ let
       # Emergency shell
       sed '/ExecStart=/c\ExecStart=${extraUtils}/bin/emergency.sh' -i $out/emergency.service
 
-      # Default target
+      # Default target, must be linked after substitutions, otherwise symlinks are lost.
       ln -sfn ${cfg.defaultUnit} $out/default.target
       
       echo "patching units..."
       for i in $out/*; do
-        if [ -f "$i" ]; then
+        if [ ! -L "$i" ] && [ ! -d "$i" ]; then
           substituteInPlace "$i" \
             --replace ${pkgs.sysvtools}/bin/ ${extraUtils}/bin/ \
             --replace ${pkgs.sysvtools}/sbin/ ${extraUtils}/bin/ \
@@ -522,11 +526,14 @@ in
                    (v: let n = escapeSystemdPath v.where;
                        in nameValuePair "${n}.automount" (automountToUnit n v)) cfg.automounts);
 
+    boot.initrd.availableKernelModules = [ "autofs4" ];
+      
     boot.initrd.extraUtilsCommands = ''
       cp -v ${systemd}/lib/systemd/systemd $out/bin
       cp -v ${systemd}/lib/systemd/systemd-journald $out/bin
       cp -v ${systemd}/lib/systemd/systemd-sysctl $out/bin
       cp -v ${systemd}/lib/systemd/systemd-modules-load $out/bin
+      cp -v ${systemd}/lib/systemd/systemd-vconsole-setup $out/bin
       cp -v ${systemd}/bin/systemctl $out/bin
       cp -v ${systemd}/bin/journalctl $out/bin
       cp -v ${pkgs.libcap}/lib/libcap.so.* $out/lib

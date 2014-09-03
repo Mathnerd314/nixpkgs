@@ -20,7 +20,7 @@ echo "[1;32m<<< NixOS Stage 1 >>>[0m"
 echo
 
 
-# Mount special file systems.
+# Special file systems.
 mkdir -p /proc
 mount -t proc proc /proc
 mkdir -p /sys
@@ -29,7 +29,7 @@ mount -t devtmpfs -o "size=@devSize@" devtmpfs /dev
 mkdir -p /run
 mount -t tmpfs -o "mode=0755,size=@runSize@" tmpfs /run
 mkdir -p /etc
-touch /etc/initrd-release
+touch /etc/initrd-release # needed by systemd
 touch /etc/fstab # to shut up mount
 ln -s /proc/mounts /etc/mtab # needed by systemd
 
