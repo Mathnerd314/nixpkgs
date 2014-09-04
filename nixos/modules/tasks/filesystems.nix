@@ -110,7 +110,7 @@ let
       };
 
       mountAfter = mkOption {
-        default = [ "/" ];
+        default = [];
         type = types.listOf types.str;
         description = "Mount this file system after the listed file systems.";
       };
