@@ -190,6 +190,7 @@ in
       { device = "/dev/root";
         neededForBoot = true;
         noCheck = true;
+        systemdConfig.after = [ "systemd-udev-settle.service" ];
       };
 
     # In stage 1, mount a tmpfs on top of /nix/store (the squashfs

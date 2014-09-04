@@ -399,13 +399,7 @@ in
 
     boot.initrd.supportedFilesystems = map (fs: fs.fsType) fileSystems;
 
-    boot.initrd.systemd.mounts = map (fs:
-      fs.systemdConfig //
-      { where = if fs.mountPoint == "/" then "/sysroot" else "/sysroot" + fs.mountPoint;
-        requiredBy = fs.systemdConfig.requiredBy ++ (if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
-        before = (fs.systemdConfig.unitConfig.Before or []) ++ (if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
-      }
-    ) fileSystems;
+    boot.initrd.systemd.mounts = map (fs: fs.systemdInitrdConfig) fileSystems;
 
   };
 }

@@ -122,6 +122,14 @@ let
         description = "Additional configuration for systemd.";
       };
 
+      systemdInitrdConfig = mkOption {
+        internal = true;
+        default = {};
+        type = types.optionSet;
+        options = [ mountOptions ];
+        description = "Additional configuration for the initrd.";
+      };
+
     };
 
     config = {
@@ -140,6 +148,24 @@ let
         type = config.fsType;
         options = config.options;
       };
+
+      systemdInitrdConfig = {
+        wantedBy = mkDefault (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore);
+        before = mkDefault (
+          (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore)
+          ++ (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]));
+
+        wants = mkDefault (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountAfter);
+        after = mkDefault (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountAfter);
+        
+        requiredBy = mkDefault (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
+
+        where = if config.mountPoint == "/" then "/sysroot" else "/sysroot" + config.mountPoint;
+        what = if hasPrefix "/" config.device && !(hasPrefix "/dev" config.device) then "/sysroot/${config.device}" # for bind mounts
+               else config.device;
+        type = config.fsType;
+        options = config.options;
+      };        
       
     };
 
