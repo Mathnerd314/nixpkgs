@@ -394,16 +394,16 @@ in
 
     # Prevent systemd from waiting for the /dev/root symlink.
     systemd.units."dev-root.device".text = "";
+    
+    boot.initrd.systemd.units."dev-root.device".text = "";
 
     boot.initrd.supportedFilesystems = map (fs: fs.fsType) fileSystems;
 
     boot.initrd.systemd.mounts = map (fs:
-      { what = fs.device;
-        where = if fs.mountPoint == "/" then "/sysroot" else "/sysroot" + fs.mountPoint;
-        type = fs.fsType;
-        options = fs.options;
-        requiredBy = if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
-        before = if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
+      fs.systemdConfig //
+      { where = if fs.mountPoint == "/" then "/sysroot" else "/sysroot" + fs.mountPoint;
+        requiredBy = fs.systemdConfig.requiredBy ++ (if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
+        before = (fs.systemdConfig.unitConfig.Before or []) ++ (if fs.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
       }
     ) fileSystems;
 

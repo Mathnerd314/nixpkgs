@@ -2,12 +2,51 @@
 
 with lib;
 with utils;
+with import ../system/boot/systemd-unit-options.nix { inherit config lib; };
 
 let
 
   fileSystems = attrValues config.fileSystems;
 
   prioOption = prio: optionalString (prio !=null) " pri=${toString prio}";
+
+  unitConfig = { config, ... }: {
+    config = {
+      unitConfig =
+        optionalAttrs (config.requires != [])
+          { Requires = toString config.requires; }
+        // optionalAttrs (config.wants != [])
+          { Wants = toString config.wants; }
+        // optionalAttrs (config.after != [])
+          { After = toString config.after; }
+        // optionalAttrs (config.before != [])
+          { Before = toString config.before; }
+        // optionalAttrs (config.bindsTo != [])
+          { BindsTo = toString config.bindsTo; }
+        // optionalAttrs (config.partOf != [])
+          { PartOf = toString config.partOf; }
+        // optionalAttrs (config.conflicts != [])
+          { Conflicts = toString config.conflicts; }
+        // optionalAttrs (config.restartTriggers != [])
+          { X-Restart-Triggers = toString config.restartTriggers; }
+        // optionalAttrs (config.description != "") {
+          Description = config.description;
+        };
+    };
+  };
+
+  mountConfig = { name, config, ... }: {
+    config = {
+      mountConfig =
+        { What = config.what;
+          Where = config.where;
+        } // optionalAttrs (config.type != "") {
+          Type = config.type;
+        } // optionalAttrs (config.options != "") {
+          Options = config.options;
+        };
+    };
+  };
 
   fileSystemOpts = { name, config, ... }: {
 
@@ -64,11 +103,44 @@ let
         description = "Disable running fsck on this filesystem.";
       };
 
+      mountBefore = mkOption {
+        default = [];
+        type = types.listOf types.str;
+        description = "Mount this file system before the listed file systems.";
+      };
+
+      mountAfter = mkOption {
+        default = [ "/" ];
+        type = types.listOf types.str;
+        description = "Mount this file system after the listed file systems.";
+      };
+
+      systemdConfig = mkOption {
+        default = {};
+        type = types.optionSet;
+        options = [ mountOptions ];
+        description = "Additional configuration for systemd.";
+      };
+
     };
 
     config = {
       mountPoint = mkDefault name;
       device = mkIf (config.fsType == "tmpfs") (mkDefault config.fsType);
+
+      systemdConfig = {
+        wantedBy = mkDefault (map (x: escapeSystemdPath "${x}.mount") config.mountBefore);
+        before = mkDefault (map (x: escapeSystemdPath "${x}.mount") config.mountBefore);
+
+        wants = mkDefault (map (x: escapeSystemdPath "${x}.mount") config.mountAfter);
+        after = mkDefault (map (x: escapeSystemdPath "${x}.mount") config.mountAfter);
+
+        what = config.device;
+        where = config.mountPoint;
+        type = config.fsType;
+        options = config.options;
+      };
+      
     };
 
   };
@@ -204,6 +276,9 @@ in
           };
 
       in listToAttrs (map formatDevice (filter (fs: fs.autoFormat) fileSystems));
+
+    # Emit a .mount for each mount point
+    systemd.mounts = map (x: x.systemdConfig) fileSystems;
 
   };
 
