@@ -199,6 +199,7 @@ in
         device = "/iso/nix-store.squashfs";
         options = "loop";
         neededForBoot = true;
+        mountAfter = [ "/iso" ];
       };
 
     fileSystems."/nix/.rw-store" =
@@ -211,6 +212,7 @@ in
       { fsType = "unionfs-fuse";
         device = "unionfs";
         options = "allow_other,cow,nonempty,chroot=/sysroot,max_files=32768,hide_meta_files,dirs=/nix/.rw-store=rw:/nix/.ro-store=ro";
+        mountAfter = [ "/nix/.ro-store" "/nix/.rw-store" ];
       };
 
     boot.initrd.availableKernelModules = [ "squashfs" "iso9660" ];
