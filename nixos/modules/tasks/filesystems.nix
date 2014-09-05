@@ -137,11 +137,11 @@ let
       device = mkIf (config.fsType == "tmpfs") (mkDefault config.fsType);
 
       systemdConfig = {
-        wantedBy = mkDefault (map (x: escapeSystemdPath "${x}.mount") config.mountBefore);
-        before = mkDefault (map (x: escapeSystemdPath "${x}.mount") config.mountBefore);
+        wantedBy = mkDefault (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
+        before = mkDefault (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
 
-        wants = mkDefault (map (x: escapeSystemdPath "${x}.mount") config.mountAfter);
-        after = mkDefault (map (x: escapeSystemdPath "${x}.mount") config.mountAfter);
+        wants = mkDefault (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
+        after = mkDefault (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
 
         what = config.device;
         where = config.mountPoint;
@@ -155,8 +155,8 @@ let
           (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore)
           ++ (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]));
 
-        wants = mkDefault (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountAfter);
-        after = mkDefault (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountAfter);
+        wants = mkDefault (map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter);
+        after = mkDefault (map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter);
         
         requiredBy = mkDefault (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
 
@@ -165,7 +165,7 @@ let
                else config.device;
         type = config.fsType;
         options = config.options;
-      };        
+      };
       
     };
 
