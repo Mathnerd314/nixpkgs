@@ -10,44 +10,6 @@ let
 
   prioOption = prio: optionalString (prio !=null) " pri=${toString prio}";
 
-  unitConfig = { config, ... }: {
-    config = {
-      unitConfig =
-        optionalAttrs (config.requires != [])
-          { Requires = toString config.requires; }
-        // optionalAttrs (config.wants != [])
-          { Wants = toString config.wants; }
-        // optionalAttrs (config.after != [])
-          { After = toString config.after; }
-        // optionalAttrs (config.before != [])
-          { Before = toString config.before; }
-        // optionalAttrs (config.bindsTo != [])
-          { BindsTo = toString config.bindsTo; }
-        // optionalAttrs (config.partOf != [])
-          { PartOf = toString config.partOf; }
-        // optionalAttrs (config.conflicts != [])
-          { Conflicts = toString config.conflicts; }
-        // optionalAttrs (config.restartTriggers != [])
-          { X-Restart-Triggers = toString config.restartTriggers; }
-        // optionalAttrs (config.description != "") {
-          Description = config.description;
-        };
-    };
-  };
-
-  mountConfig = { name, config, ... }: {
-    config = {
-      mountConfig =
-        { What = config.what;
-          Where = config.where;
-        } // optionalAttrs (config.type != "") {
-          Type = config.type;
-        } // optionalAttrs (config.options != "") {
-          Options = config.options;
-        };
-    };
-  };
-
   fileSystemOpts = { name, config, ... }: {
 
     options = {
@@ -115,20 +77,22 @@ let
         description = "Mount this file system after the listed file systems.";
       };
 
-      systemdConfig = mkOption {
-        default = {};
-        type = types.optionSet;
-        options = [ mountOptions ];
-        description = "Additional configuration for systemd.";
-      };
+      systemdConfig = mountOptions;
+      # mkOption {
+      #   default = {};
+      #   type = types.optionSet;
+      #   options = [ mountOptions ];
+      #   description = "Additional configuration for systemd.";
+      # };
 
-      systemdInitrdConfig = mkOption {
-        internal = true;
-        default = {};
-        type = types.optionSet;
-        options = [ mountOptions ];
-        description = "Additional configuration for the initrd.";
-      };
+      systemdInitrdConfig = mountOptions;
+      # mkOption {
+      #   internal = true;
+      #   default = {};
+      #   type = types.optionSet;
+      #   options = [ mountOptions ];
+      #   description = "Additional configuration for the initrd.";
+      # };
 
     };
 
