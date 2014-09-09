@@ -188,9 +188,10 @@ in
     # init script.
     fileSystems."/iso" =
       { device = "/dev/root";
+        fsType = "iso9660";
         neededForBoot = true;
         noCheck = true;
-        systemdConfig.after = [ "systemd-udev-settle.service" ];
+        systemdInitrdConfig.after = [ "systemd-udev-settle.service" "systemd-modules-load.service" ];
       };
 
     # In stage 1, mount a tmpfs on top of /nix/store (the squashfs

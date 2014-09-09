@@ -77,23 +77,16 @@ let
         description = "Mount this file system after the listed file systems.";
       };
 
-      systemdConfig = mountOptions;
-      # mkOption {
-      #   default = {};
-      #   type = types.optionSet;
-      #   options = [ mountOptions ];
-      #   description = "Additional configuration for systemd.";
-      # };
+      systemdConfig = mkOption {
+        type = types.nullOr (types.submodule { options = mountOptions; });
+        description = "Additional configuration for the systemd mount";
+      };
 
-      systemdInitrdConfig = mountOptions;
-      # mkOption {
-      #   internal = true;
-      #   default = {};
-      #   type = types.optionSet;
-      #   options = [ mountOptions ];
-      #   description = "Additional configuration for the initrd.";
-      # };
-
+      systemdInitrdConfig = mkOption {
+        type = types.nullOr (types.submodule { options = mountOptions; });
+        description = "Additional configuration for the initrd mount";
+      };
+      
     };
 
     config = {
@@ -101,11 +94,11 @@ let
       device = mkIf (config.fsType == "tmpfs") (mkDefault config.fsType);
 
       systemdConfig = {
-        wantedBy = mkDefault (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
-        before = mkDefault (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
+        wantedBy = (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
+        before = (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
 
-        wants = mkDefault (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
-        after = mkDefault (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
+        wants = (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
+        after = (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
 
         what = config.device;
         where = config.mountPoint;
@@ -114,15 +107,15 @@ let
       };
 
       systemdInitrdConfig = {
-        wantedBy = mkDefault (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore);
-        before = mkDefault (
+        wantedBy = (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore);
+        before = (
           (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore)
           ++ (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]));
 
-        wants = mkDefault (map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter);
-        after = mkDefault (map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter);
+        wants = (map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter);
+        after = (map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter);
         
-        requiredBy = mkDefault (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
+        requiredBy = (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
 
         where = if config.mountPoint == "/" then "/sysroot" else "/sysroot" + config.mountPoint;
         what = if hasPrefix "/" config.device && !(hasPrefix "/dev" config.device) then "/sysroot/${config.device}" # for bind mounts
