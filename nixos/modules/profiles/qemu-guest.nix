@@ -13,6 +13,7 @@ with utils;
   # bug in qemu-kvm > 1.5.2 (where the VM clock is initialised
   # to the *boot time* of the host).
   boot.initrd.systemd.services.hwclockBug = {
+	  description = "Workaround kvm hwclock bug";
     wantedBy = [ "initrd.target" ];
     before = [ "initrd.target" ];
     serviceConfig = {

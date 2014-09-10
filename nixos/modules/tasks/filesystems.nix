@@ -97,8 +97,8 @@ let
         wantedBy = (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
         before = (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
 
-        wants = (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
-        after = (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
+        wants = [ "${escapeSystemdPath config.device}.device" ] ++ (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
+        after = [ "${escapeSystemdPath config.device}.device" ] ++ (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
 
         what = config.device;
         where = config.mountPoint;
@@ -107,15 +107,15 @@ let
       };
 
       systemdInitrdConfig = {
-        wantedBy = (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore);
-        before = (
+        wantedBy = map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore;
+        before = 
           (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore)
-          ++ (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]));
+          ++ (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
 
-        wants = (map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter);
-        after = (map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter);
-        
-        requiredBy = (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
+        wants = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter;
+        after = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter;
+
+        requiredBy = if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
 
         where = if config.mountPoint == "/" then "/sysroot" else "/sysroot" + config.mountPoint;
         what = if hasPrefix "/" config.device && !(hasPrefix "/dev" config.device) then "/sysroot/${config.device}" # for bind mounts

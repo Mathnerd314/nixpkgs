@@ -526,6 +526,8 @@ in
                    (v: let n = escapeSystemdPath v.where;
                        in nameValuePair "${n}.automount" (automountToUnit n v)) cfg.automounts);
 
+    boot.initrd.systemd.targets.initrd.wants = [ "systemd-udev-trigger.service" "systemd-udev-settle.service" ];
+      
     boot.initrd.availableKernelModules = [ "autofs4" ];
       
     boot.initrd.extraUtilsCommands = ''

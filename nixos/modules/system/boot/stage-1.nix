@@ -3,9 +3,10 @@
 # the modules necessary to mount the root file system, then calls the
 # init in the root file system to start the second boot stage.
 
-{ config, lib, pkgs, ... }:
+{ config, lib, utils, pkgs, ... }:
 
 with lib;
+with utils;
 
 let
 
@@ -395,10 +396,40 @@ in
     # Prevent systemd from waiting for the /dev/root symlink.
     systemd.units."dev-root.device".text = "";
     
+    # Prevent systemd from waiting for the /dev/root symlink.
     boot.initrd.systemd.units."dev-root.device".text = "";
 
     boot.initrd.supportedFilesystems = map (fs: fs.fsType) fileSystems;
+    # Probe filesystems type
+    boot.initrd.systemd.services = listToAttrs (map (fs:
+    {
+      name = "fsprobe-${escapeSystemdPath fs.device}";
+      value = {
+        description = "Probe ${fs.device} file system";
+          
+        script = ''
+          fsType=$(blkid -o value -s TYPE "${fs.device}")
+          echo XXXXXXXXXXX
+          ls -l ${fs.device} $fsType
+          if [ -n "$fsType" ]; then
+            mkdir -p /run/systemd/system/sysroot-${escapeSystemdPath fs.mountPoint}.mount.d/
+            echo -e "[Mount]\nType=$fsType" > /run/systemd/system/sysroot-${escapeSystemdPath fs.mountPoint}.mount.d/fsprobe.conf
+          fi
+        '';
 
+        wants = [ "${escapeSystemdPath fs.device}.device" ];
+        after = [ "${escapeSystemdPath fs.device}.device" ];
+
+        wantedBy = [ "sysroot-${escapeSystemdPath fs.mountPoint}.mount" ];
+        before = [ "sysroot-${escapeSystemdPath fs.mountPoint}.mount" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+      };
+    }) (filter (fs: fs.fsType == "auto") fileSystems));
+    
     boot.initrd.systemd.mounts = map (fs: fs.systemdInitrdConfig) fileSystems;
 
   };

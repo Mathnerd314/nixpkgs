@@ -282,6 +282,8 @@ in
       '';
 
     boot.initrd.systemd.services.vdaDisk = {
+      description = "Setup /dev/vda";
+      
       script = ''
         # If the disk image appears to be empty, run mke2fs to
         # initialise.
@@ -300,6 +302,8 @@ in
     };
 
     boot.initrd.systemd.services.setupRoot = {
+      description = "Setup new root";
+      
       script = ''
         # Mark this as a NixOS machine.
         mkdir -p /sysroot/etc

@@ -45,6 +45,7 @@ let kernel = config.boot.kernelPackages.kernel; in
     # determinism (e.g. if the VM runs at lower speed, then
     # timeouts in the VM should also be delayed).
     boot.initrd.systemd.services.acpi_pm = {
+      description = "Set clock source to acpi_pm";
       wantedBy = [ "initrd.target" ];
       before = [ "initrd.target" ];
       after = [ (utils.escapeSystemdPath "/sys/devices/system/clocksource/clocksource0.device") ];
