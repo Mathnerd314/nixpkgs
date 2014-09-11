@@ -46,7 +46,7 @@ let
       "initrd-switch-root.target"
 
       # Initrd services.
-      "initrd-parse-etc.service"
+#      "initrd-parse-etc.service"
       "initrd-switch-root.service"
       "initrd-cleanup.service"
       

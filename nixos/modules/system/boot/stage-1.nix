@@ -401,35 +401,50 @@ in
 
     boot.initrd.supportedFilesystems = map (fs: fs.fsType) fileSystems;
     # Probe filesystems type
-    boot.initrd.systemd.services = listToAttrs (map (fs:
+    boot.initrd.systemd.services = {
+      initrd-parse-etc = {
+        description = "Reload Configuration from the Real Root";
+        serviceConfig = {
+          DefaultDependencies = false;
+          Type = "oneshot";
+          ExecStart="${extraUtils}/bin/systemctl --no-block start initrd-cleanup.service";
+          OnFailure = "emergency.target";
+          OnFailureJobMode = "replace-irreversibly";
+          ConditionPathExists = "/etc/initrd-release";
+        };
+        
+        requires = [ "initrd-root-fs.target" ];
+        after = [ "initrd-root-fs.target" ];
+      };
+    } // listToAttrs (map (fs:
     {
       name = "fsprobe-${escapeSystemdPath fs.device}";
       value = {
         description = "Probe ${fs.device} file system";
-          
+        
         script = ''
-          fsType=$(blkid -o value -s TYPE "${fs.device}")
-          echo XXXXXXXXXXX
-          ls -l ${fs.device} $fsType
-          if [ -n "$fsType" ]; then
-            mkdir -p /run/systemd/system/sysroot-${escapeSystemdPath fs.mountPoint}.mount.d/
-            echo -e "[Mount]\nType=$fsType" > /run/systemd/system/sysroot-${escapeSystemdPath fs.mountPoint}.mount.d/fsprobe.conf
-          fi
+        fsType=$(blkid -o value -s TYPE "${fs.device}")
+        echo XXXXXXXXXXX
+        ls -l ${fs.device} $fsType
+        if [ -n "$fsType" ]; then
+          mkdir -p /run/systemd/system/sysroot-${escapeSystemdPath fs.mountPoint}.mount.d/
+          echo -e "[Mount]\nType=$fsType" > /run/systemd/system/sysroot-${escapeSystemdPath fs.mountPoint}.mount.d/fsprobe.conf
+        fi
         '';
-
-        wants = [ "${escapeSystemdPath fs.device}.device" ];
-        after = [ "${escapeSystemdPath fs.device}.device" ];
-
+        
+        # wants = [ "${escapeSystemdPath fs.device}.device" ];
+        # after = [ "${escapeSystemdPath fs.device}.device" ];
+        
         wantedBy = [ "sysroot-${escapeSystemdPath fs.mountPoint}.mount" ];
         before = [ "sysroot-${escapeSystemdPath fs.mountPoint}.mount" ];
-
+        
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
         };
       };
     }) (filter (fs: fs.fsType == "auto") fileSystems));
-    
+
     boot.initrd.systemd.mounts = map (fs: fs.systemdInitrdConfig) fileSystems;
 
   };
