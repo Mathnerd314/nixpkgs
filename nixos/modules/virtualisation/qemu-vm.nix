@@ -349,10 +349,7 @@ in
     # attribute should be disregarded for the purpose of building a VM
     # test image (since those filesystems don't exist in the VM).
     fileSystems = mkVMOverride (
-      { "/" = {
-          device = "/dev/vda";
-          fsType = "ext4";
-        };
+      { "/".device = "/dev/vda";
         ${if cfg.writableStore then "/nix/.ro-store" else "/nix/store"} =
           { device = "store";
             fsType = "9p";

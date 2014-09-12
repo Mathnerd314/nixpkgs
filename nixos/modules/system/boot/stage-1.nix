@@ -23,6 +23,13 @@ let
     allowMissing = true;
   };
 
+  fsprobeScript = pkgs.substituteAll {
+    src = ./systemd-fsprobe.sh;
+
+    shell = "/bin/ash";
+
+    isExecutable = true;
+  };
 
   # Some additional utilities needed in stage 1, like mount, lvm, fsck
   # etc.  We don't want to bring in all of those packages, so we just
@@ -79,6 +86,9 @@ let
       # Copy the emergency script.
       cp -v ${config.boot.initrd.emergencyScript} $out/bin/emergency.sh
 
+      # Copy our systemd-fsprobe util
+      cp -v ${fsprobeScript} $out/bin/systemd-fsprobe
+
       ${config.boot.initrd.extraUtilsCommands}
 
       # Strip binaries further than normal.
@@ -119,6 +129,7 @@ let
     (fs: fs.neededForBoot || elem fs.mountPoint [ "/" "/nix" "/nix/store" "/var" "/var/log" "/var/lib" "/etc" ])
     (attrValues config.fileSystems);
 
+  autoFileSystems = filter (fs: fs.fsType == "auto") fileSystems;
 
   udevRules = pkgs.stdenv.mkDerivation {
     name = "udev-rules";
@@ -394,56 +405,48 @@ in
     ];
 
     # Prevent systemd from waiting for the /dev/root symlink.
-    systemd.units."dev-root.device".text = "";
-    
+    systemd.units."dev-root.device".text = ''
+      [Unit]
+      Wants=systemd-udev-trigger.service systemd-udev-settle.service
+      After=systemd-udev-trigger.service systemd-udev-settle.service
+    '';
+      
     # Prevent systemd from waiting for the /dev/root symlink.
-    boot.initrd.systemd.units."dev-root.device".text = "";
+    boot.initrd.systemd.units."dev-root.device".text = ''
+      [Unit]
+      Wants=systemd-udev-trigger.service systemd-udev-settle.service
+      After=systemd-udev-trigger.service systemd-udev-settle.service
+    '';
 
     boot.initrd.supportedFilesystems = map (fs: fs.fsType) fileSystems;
+    
     # Probe filesystems type
-    boot.initrd.systemd.services = {
-      initrd-parse-etc = {
-        description = "Reload Configuration from the Real Root";
-        serviceConfig = {
-          DefaultDependencies = false;
-          Type = "oneshot";
-          ExecStart="${extraUtils}/bin/systemctl --no-block start initrd-cleanup.service";
-          OnFailure = "emergency.target";
-          OnFailureJobMode = "replace-irreversibly";
-          ConditionPathExists = "/etc/initrd-release";
-        };
-        
-        requires = [ "initrd-root-fs.target" ];
-        after = [ "initrd-root-fs.target" ];
-      };
-    } // listToAttrs (map (fs:
+    boot.initrd.systemd.services = listToAttrs (map (fs:
     {
       name = "fsprobe-${escapeSystemdPath fs.device}";
       value = {
-        description = "Probe ${fs.device} file system";
-        
-        script = ''
-        fsType=$(blkid -o value -s TYPE "${fs.device}")
-        echo XXXXXXXXXXX
-        ls -l ${fs.device} $fsType
-        if [ -n "$fsType" ]; then
-          mkdir -p /run/systemd/system/sysroot-${escapeSystemdPath fs.mountPoint}.mount.d/
-          echo -e "[Mount]\nType=$fsType" > /run/systemd/system/sysroot-${escapeSystemdPath fs.mountPoint}.mount.d/fsprobe.conf
-        fi
-        '';
-        
-        # wants = [ "${escapeSystemdPath fs.device}.device" ];
-        # after = [ "${escapeSystemdPath fs.device}.device" ];
-        
-        wantedBy = [ "sysroot-${escapeSystemdPath fs.mountPoint}.mount" ];
-        before = [ "sysroot-${escapeSystemdPath fs.mountPoint}.mount" ];
+        description = "Probe ${fs.device} filesystem";
         
         serviceConfig = {
           Type = "oneshot";
+          ExecStart = "${extraUtils}/bin/systemd-fsprobe ${fs.device} ${escapeSystemdPath fs.mountPoint}";
           RemainAfterExit = true;
         };
       };
-    }) (filter (fs: fs.fsType == "auto") fileSystems));
+    }) autoFileSystems) //
+    {
+      # Reload configuration after filesystem probing
+      fsprobe-systemd-reload = {
+        wants = map (fs: "fsprobe-${escapeSystemdPath fs.device}.service") autoFileSystems;
+        after = map (fs: "fsprobe-${escapeSystemdPath fs.device}.service") autoFileSystems;
+        
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${extraUtils}/bin/systemctl daemon-reload";
+          RemainAfterExit = true;
+        };
+      };
+    };
 
     boot.initrd.systemd.mounts = map (fs: fs.systemdInitrdConfig) fileSystems;
 

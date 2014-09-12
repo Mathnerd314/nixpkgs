@@ -112,8 +112,10 @@ let
           (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore)
           ++ (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
 
-        wants = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter;
-        after = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter;
+        wants = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter
+          ++ optional (config.fsType == "auto") "fsprobe-systemd-reload.service";
+        after = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter
+          ++ optional (config.fsType == "auto") "fsprobe-systemd-reload.service";
 
         requiredBy = if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
 

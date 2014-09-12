@@ -347,9 +347,6 @@ let
         fi
       done
       
-      # Do not parse /sysroot/etc/fstab since the system is not activated yet
-      # ln -sfn /dev/null $out/initrd-parse-etc.service
-
       # Created .wants and .requires symlinks from the wantedBy and
       # requiredBy options.
       ${concatStrings (mapAttrsToList (name: unit:
@@ -526,8 +523,6 @@ in
                    (v: let n = escapeSystemdPath v.where;
                        in nameValuePair "${n}.automount" (automountToUnit n v)) cfg.automounts);
 
-    boot.initrd.systemd.targets.initrd.wants = [ "systemd-udev-trigger.service" "systemd-udev-settle.service" ];
-      
     boot.initrd.availableKernelModules = [ "autofs4" ];
       
     boot.initrd.extraUtilsCommands = ''
@@ -567,6 +562,26 @@ in
       }
 
     ];
+
+		boot.initrd.systemd.services = {
+      initrd-parse-etc = {
+        description = "Start cleanup";
+        unitConfig = {
+          DefaultDependencies = false;
+          OnFailure = "emergency.target";
+          OnFailureJobMode = "replace-irreversibly";
+          ConditionPathExists = "/etc/initrd-release";
+        };
+
+				serviceConfig = {
+          Type = "oneshot";
+          ExecStart="${extraUtils}/bin/systemctl --no-block start initrd-cleanup.service";
+				};
+        
+        requires = [ "initrd-root-fs.target" ];
+        after = [ "initrd-root-fs.target" ];
+      };
+		};
 
   };
 }

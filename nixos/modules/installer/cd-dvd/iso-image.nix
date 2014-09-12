@@ -176,7 +176,7 @@ in
     # UUID of the USB stick.  It would be nicer to write
     # `root=/dev/disk/by-label/...' here, but UNetbootin doesn't
     # recognise that.
-    boot.kernelParams = [ "systemd.log_level=debug systemd.log_target=console root=LABEL=${config.isoImage.volumeID}" ];
+    boot.kernelParams = [ "root=LABEL=${config.isoImage.volumeID}" ];
 
     fileSystems."/" =
       { fsType = "tmpfs";
@@ -188,10 +188,8 @@ in
     # init script.
     fileSystems."/iso" =
       { device = "/dev/root";
-        # fsType = "iso9660";
         neededForBoot = true;
         noCheck = true;
-        systemdInitrdConfig.after = [ "systemd-udev-settle.service" "systemd-modules-load.service" ];
       };
 
     # In stage 1, mount a tmpfs on top of /nix/store (the squashfs
