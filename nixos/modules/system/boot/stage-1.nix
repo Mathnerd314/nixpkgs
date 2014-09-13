@@ -426,6 +426,9 @@ in
       name = "fsprobe-${escapeSystemdPath fs.device}";
       value = {
         description = "Probe ${fs.device} filesystem";
+
+        wants = [ "${escapeSystemdPath fs.device}.device" ];
+        before = [ "${escapeSystemdPath fs.device}.device" ];
         
         serviceConfig = {
           Type = "oneshot";

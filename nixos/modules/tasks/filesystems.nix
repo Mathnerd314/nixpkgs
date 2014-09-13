@@ -94,11 +94,11 @@ let
       device = mkIf (config.fsType == "tmpfs") (mkDefault config.fsType);
 
       systemdConfig = {
-        wantedBy = (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
-        before = (map (x: "${escapeSystemdPath x}.mount") config.mountBefore);
+        wantedBy = map (x: "${escapeSystemdPath x}.mount") config.mountBefore;
+        before = map (x: "${escapeSystemdPath x}.mount") config.mountBefore;
 
-        wants = [ "${escapeSystemdPath config.device}.device" ] ++ (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
-        after = [ "${escapeSystemdPath config.device}.device" ] ++ (map (x: "${escapeSystemdPath x}.mount") config.mountAfter);
+        wants = map (x: "${escapeSystemdPath x}.mount") config.mountAfter;
+        after = map (x: "${escapeSystemdPath x}.mount") config.mountAfter;
 
         what = config.device;
         where = config.mountPoint;
@@ -108,8 +108,8 @@ let
 
       systemdInitrdConfig = {
         wantedBy = map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore;
-        before = 
-          (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore)
+        requiredBy = if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
+        before = (map (x: escapeSystemdPath "/sysroot/${x}.mount") config.mountBefore)
           ++ (if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ]);
 
         wants = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter
@@ -117,9 +117,7 @@ let
         after = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter
           ++ optional (config.fsType == "auto") "fsprobe-systemd-reload.service";
 
-        requiredBy = if config.mountPoint == "/" then [ "initrd-root-fs.target" ] else [ "initrd-fs.target" ];
-
-        where = if config.mountPoint == "/" then "/sysroot" else "/sysroot" + config.mountPoint;
+        where = "/sysroot" + config.mountPoint;
         what = if hasPrefix "/" config.device && !(hasPrefix "/dev" config.device) then "/sysroot/${config.device}" # for bind mounts
                else config.device;
         type = config.fsType;
