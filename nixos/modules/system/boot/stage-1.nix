@@ -432,7 +432,7 @@ in
         
         serviceConfig = {
           Type = "oneshot";
-          ExecStart = "${extraUtils}/bin/systemd-fsprobe ${fs.device} ${escapeSystemdPath fs.mountPoint}";
+          ExecStart = "${extraUtils}/bin/systemd-fsprobe ${fs.device} ${escapeSystemdPath fs.systemdInitrdConfig.where}";
           RemainAfterExit = true;
         };
       };

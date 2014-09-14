@@ -117,7 +117,7 @@ let
         after = map (x: "sysroot-${escapeSystemdPath x}.mount") config.mountAfter
           ++ optional (config.fsType == "auto") "fsprobe-systemd-reload.service";
 
-        where = "/sysroot" + config.mountPoint;
+        where = if config.mountPoint == "/" then "/sysroot" else "/sysroot${config.mountPoint}";
         what = if hasPrefix "/" config.device && !(hasPrefix "/dev" config.device) then "/sysroot/${config.device}" # for bind mounts
                else config.device;
         type = config.fsType;
