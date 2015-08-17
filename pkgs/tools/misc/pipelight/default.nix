@@ -29,7 +29,7 @@ in stdenv.mkDerivation rec {
     ./configure \
       --prefix=$out \
       --moz-plugin-path=$out/${mozillaPluginPath} \
-      --wine-path=${wine_custom} \
+      --wine-path=${wine_custom}/bin/wine \
       --gpg-exec=${gnupg}/bin/gpg2 \
       --bash-interp=${bash}/bin/bash \
       --downloader=${curl}/bin/curl

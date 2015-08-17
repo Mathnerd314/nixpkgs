@@ -18,9 +18,9 @@ stdenv.mkDerivation ((lib.optionalAttrs (! isNull buildScript) {
   ]);
 
   nativeBuildInputs = toBuildInputs pkgArches (pkgs: (with pkgs; [
-    freetype fontconfig mesa mesa_noglu.osmesa libdrm libpng libjpeg openssl gnutls cups ncurses
+    freetype fontconfig mesa mesa_noglu.osmesa libdrm libpng libjpeg libtiff libxslt openssl gnutls cups ncurses
   ]) ++ (with pkgs.xorg; [
-    xlibsWrapper libXi libXcursor libXinerama libXrandr libXrender libXxf86vm libXcomposite
+    libX11 libXext libXi libXcursor libXinerama libXrandr libXrender libXxf86vm libXcomposite
   ]));
 
   # Wine locates a lot of libraries dynamically through dlopen().  Add
