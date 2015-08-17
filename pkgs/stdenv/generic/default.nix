@@ -93,6 +93,7 @@ let
     , crossConfig ? null
     , meta ? {}
     , passthru ? {}
+    , crossAttrs ? {}
     , pos ? null # position used in error messages and for meta.position
     , ... } @ attrs:
     let
@@ -185,7 +186,7 @@ let
         meta = meta // (if pos' != null then {
           position = pos'.file + ":" + toString pos'.line;
         } else {});
-        inherit passthru;
+        inherit passthru crossAttrs;
       } //
       # Pass through extra attributes that are not inputs, but
       # should be made available to Nix expressions using the

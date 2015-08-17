@@ -35,21 +35,9 @@ rec {
   */
   overrideDerivation = drv: f:
     let
-      newDrv = derivation (drv.drvAttrs // (f drv));
-    in addPassthru newDrv (
-      { meta = drv.meta or {};
-        passthru = if drv ? passthru then drv.passthru else {};
-      }
-      //
-      (drv.passthru or {})
-      //
-      (if (drv ? crossDrv && drv ? nativeDrv)
-       then {
-         crossDrv = overrideDerivation drv.crossDrv f;
-         nativeDrv = overrideDerivation drv.nativeDrv f;
-       }
-       else { }));
-
+      oldDrv = drv.drvAttrs // { meta = drv.meta or {}; passthru = drv.passthru or {}; crossAttrs = drv.crossAttrs or {}; };
+      newDrv = if builtins.isFunction f then f oldDrv else f;
+    in drv.stdenv.mkDerivation (lib.recursiveUpdate oldDrv newDrv);
 
   makeOverridable = f: origArgs:
     let
