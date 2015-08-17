@@ -144,8 +144,6 @@ let
         (if separateDebugInfo then [ ../../build-support/setup-hooks/separate-debug-info.sh ] else []);
 
     in
-      assert licenseAllowed attrs;
-
       lib.addPassthru (derivation (
         (removeAttrs attrs
           ["meta" "passthru" "crossAttrs" "pos"
@@ -158,7 +156,7 @@ let
             lib.unique (lib.concatMap (input: input.__propagatedImpureHostDeps or []) (propagatedBuildInputs ++ propagatedNativeBuildInputs));
         in
         {
-          builder = attrs.realBuilder or shell;
+          builder = assert licenseAllowed attrs; attrs.realBuilder or shell;
           args = attrs.args or ["-e" (attrs.builder or ./default-builder.sh)];
           stdenv = result;
           system = result.system;
