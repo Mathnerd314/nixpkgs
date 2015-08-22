@@ -105,7 +105,7 @@ let
           builtins.unsafeGetAttrPos "name" attrs;
       pos'' = if pos' != null then "‘" + pos'.file + ":" + toString pos'.line + "’" else "«unknown-file»";
 
-      throwEvalHelp = unfreeOrBroken: whatIsWrong:
+      throwEvalHelp_ = unfreeOrBroken: whatIsWrong:
         assert builtins.elem unfreeOrBroken ["Unfree" "Broken" "blacklisted"];
 
         throw ("Package ‘${attrs.name or "«name-missing»"}’ in ${pos''} ${whatIsWrong}, refusing to evaluate."
@@ -119,7 +119,7 @@ let
           to ~/.nixpkgs/config.nix.
         ''));
 
-      licenseAllowed = attrs:
+      licenseAllowed = {throwEvalHelp ? throwEvalHelp_, attrs}:
         if hasDeniedUnfreeLicense attrs && !(hasWhitelistedLicense attrs) then
           throwEvalHelp "Unfree" "has an unfree license ‘${builtins.toJSON attrs.meta.license}’ which is not whitelisted"
         else if hasBlacklistedLicense attrs then
@@ -150,7 +150,7 @@ let
           computedPropagatedImpureHostDeps = lib.unique (lib.concatMap (input: input.__propagatedImpureHostDeps or []) (propagatedBuildInputs ++ propagatedNativeBuildInputs));
         in
         {
-          builder = assert licenseAllowed attrs; attrs.realBuilder or shell;
+          builder = assert licenseAllowed { inherit attrs; }; attrs.realBuilder or shell;
           args = attrs.args or ["-e" (attrs.builder or ./default-builder.sh)];
           stdenv = result;
           system = result.system;
@@ -182,7 +182,7 @@ let
         # identify the source location of the package.
         meta = meta // (if pos' != null then {
           position = pos'.file + ":" + toString pos'.line;
-        } else {});
+        } else {}) // (if licenseAllowed { throwEvalHelp = x: y: false; inherit attrs; } then {} else { hydraPlatforms = []; });
         inherit passthru;
       } //
       # Pass through extra attributes that are not inputs, but
