@@ -33,7 +33,14 @@ rec {
      function is used to build arbitrary derivations inside a QEMU
      virtual machine.
   */
-  overrideDerivation = drv: f: drv.overrideDerivation f;
+  overrideDerivation = drv: f:
+    if drv ? overrideInner then overrideDerivation (drv.overrideInner) f else
+    (drv.overrideDerivation or drv.override) (x: f (x // {
+        buildInputs = x.buildInputs or [];
+        nativeBuildInputs = x.nativeBuildInputs or [];
+        propagatedBuildInputs = x.propagatedBuildInputs or [];
+        propagatedNativeBuildInputs = x.propagatedNativeBuildInputs or [];
+      }));
 
 
   makeOverridable = f: origArgs:
@@ -45,7 +52,7 @@ rec {
         { override = newArgs: makeOverridable f (overrideWith newArgs); }
           // lib.optionalAttrs (ff ? override) { overrideDerivation = ff.override; }
           // lib.optionalAttrs (ff ? overrideDerivation) { overrideInner = ff; } )
-      else if builtins.isFunction ff then assert false;
+      else if builtins.isFunction ff then
         { override = newArgs: makeOverridable f (overrideWith newArgs);
           __functor = self: ff;
           overrideDerivation = throw "overrideDerivation not yet supported for functors";
@@ -90,9 +97,7 @@ rec {
       auto = builtins.intersectAttrs (builtins.functionArgs f) autoArgs;
       finalArgs = auto // args;
       pkgs = f finalArgs;
-      mkAttrOverridable = name: pkg: pkg // {
-        override = newArgs: mkAttrOverridable name (f (finalArgs // newArgs)).${name};
-      };
+      mkAttrOverridable = name: pkg: makeOverridable (a: (f a).${name}) finalArgs;
     in lib.mapAttrs mkAttrOverridable pkgs;
 
 
