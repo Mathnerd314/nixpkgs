@@ -33,22 +33,7 @@ rec {
      function is used to build arbitrary derivations inside a QEMU
      virtual machine.
   */
-  overrideDerivation = drv: f:
-    let
-      newDrv = derivation (drv.drvAttrs // (f drv));
-    in addPassthru newDrv (
-      { meta = drv.meta or {};
-        passthru = if drv ? passthru then drv.passthru else {};
-      }
-      //
-      (drv.passthru or {})
-      //
-      (if (drv ? crossDrv && drv ? nativeDrv)
-       then {
-         crossDrv = overrideDerivation drv.crossDrv f;
-         nativeDrv = overrideDerivation drv.nativeDrv f;
-       }
-       else { }));
+  overrideDerivation = drv: f: drv.overrideDerivation f;
 
 
   makeOverridable = f: origArgs:
@@ -57,11 +42,10 @@ rec {
       overrideWith = newArgs: origArgs // (if builtins.isFunction newArgs then newArgs origArgs else newArgs);
     in
       if builtins.isAttrs ff then (ff //
-        { override = newArgs: makeOverridable f (overrideWith newArgs);
-          overrideDerivation = fdrv:
-            makeOverridable (args: overrideDerivation (f args) fdrv) origArgs;
-        })
-      else if builtins.isFunction ff then
+        { override = newArgs: makeOverridable f (overrideWith newArgs); }
+          // lib.optionalAttrs (ff ? override) { overrideDerivation = ff.override; }
+          // lib.optionalAttrs (ff ? overrideDerivation) { overrideInner = ff; } )
+      else if builtins.isFunction ff then assert false;
         { override = newArgs: makeOverridable f (overrideWith newArgs);
           __functor = self: ff;
           overrideDerivation = throw "overrideDerivation not yet supported for functors";
