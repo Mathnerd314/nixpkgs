@@ -477,6 +477,8 @@ let
 
   abduco = callPackage ../tools/misc/abduco { };
 
+  dracut = callPackage ../build-support/kernel/dracut.nix { };
+
   acct = callPackage ../tools/system/acct { };
 
   acoustidFingerprinter = callPackage ../tools/audio/acoustid-fingerprinter {
@@ -10164,6 +10166,8 @@ let
   goimports = goPackages.tools.bin // { outputs = [ "bin" ]; };
 
   gogoclient = callPackage ../os-specific/linux/gogoclient { };
+
+  nss_altfiles = callPackage ../os-specific/linux/nss_altfiles { };
 
   nss_ldap = callPackage ../os-specific/linux/nss_ldap { };
 
