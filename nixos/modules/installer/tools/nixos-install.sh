@@ -83,18 +83,9 @@ fi
 mkdir -m 0755 -p $mountPoint/dev $mountPoint/proc $mountPoint/sys $mountPoint/etc $mountPoint/run $mountPoint/home
 mkdir -m 01777 -p $mountPoint/tmp
 mkdir -m 0755 -p $mountPoint/tmp/root
-mkdir -m 0755 -p $mountPoint/var/setuid-wrappers
+mkdir -m 0755 -p $mountPoint${config.security.wrapperDir}
 mkdir -m 0700 -p $mountPoint/root
-mount --rbind /dev $mountPoint/dev
-mount --rbind /proc $mountPoint/proc
-mount --rbind /sys $mountPoint/sys
 mount --rbind / $mountPoint/tmp/root
-mount -t tmpfs -o "mode=0755" none $mountPoint/run
-mount -t tmpfs -o "mode=0755" none $mountPoint/var/setuid-wrappers
-rm -rf $mountPoint/var/run
-ln -s /run $mountPoint/var/run
-rm -f $mountPoint/etc/{resolv.conf,hosts}
-cp -Lf /etc/resolv.conf /etc/hosts $mountPoint/etc/
 
 if [ -e "$SSL_CERT_FILE" ]; then
     cp -Lf "$SSL_CERT_FILE" "$mountPoint/tmp/ca-cert.crt"
@@ -123,15 +114,9 @@ if ! test -e "$mountPoint/$NIXOS_CONFIG"; then
     exit 1
 fi
 
-
 # Create the necessary Nix directories on the target device, if they
 # don't already exist.
 mkdir -m 0755 -p \
-    $mountPoint/nix/var/nix/gcroots \
-    $mountPoint/nix/var/nix/temproots \
-    $mountPoint/nix/var/nix/manifests \
-    $mountPoint/nix/var/nix/userpool \
-    $mountPoint/nix/var/nix/profiles \
     $mountPoint/nix/var/nix/db \
     $mountPoint/nix/var/log/nix/drvs
 
@@ -262,7 +247,7 @@ chroot $mountPoint /nix/var/nix/profiles/system/activate
 # Ask the user to set a root password.
 if [ "$(chroot $mountPoint /run/current-system/sw/bin/sh -l -c "nix-instantiate --eval '<nixpkgs/nixos>' -A config.users.mutableUsers")" = true ] && [ -t 0 ] ; then
     echo "setting root password..."
-    chroot $mountPoint /var/setuid-wrappers/passwd
+    chroot $mountPoint ${config.security.wrapperDir}/passwd
 fi
 
 

@@ -103,7 +103,7 @@ with lib;
       description = "UPnP A/V Media Server. (${cfg.name})";
       startOn = "ip-up";
       daemonType = "fork";
-      exec = ''/var/setuid-wrappers/sudo -u ${cfg.user} -- ${pkgs.fuppes}/bin/fuppesd --friendly-name ${cfg.name} --log-level ${toString cfg.log.level} --log-file ${cfg.log.file} --config-file ${cfg.config} --vfolder-config-file ${cfg.vfolder} --database-file ${cfg.database}'';
+      exec = ''${config.security.wrapperDir}/sudo -u ${cfg.user} -- ${pkgs.fuppes}/bin/fuppesd --friendly-name ${cfg.name} --log-level ${toString cfg.log.level} --log-file ${cfg.log.file} --config-file ${cfg.config} --vfolder-config-file ${cfg.vfolder} --database-file ${cfg.database}'';
     };
 
     services.fuppesd.name = mkDefault config.networking.hostName;

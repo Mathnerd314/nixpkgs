@@ -96,7 +96,7 @@ in
             fcronallow  =       /etc/fcron.allow
             fcrondeny   =       /etc/fcron.deny
             shell       =       /bin/sh
-            sendmail    =       /var/setuid-wrappers/sendmail
+            sendmail    =       ${config.security.wrapperDir}/sendmail
             editor      =       /run/current-system/sw/bin/vi
           '';
           target = "fcron.conf";

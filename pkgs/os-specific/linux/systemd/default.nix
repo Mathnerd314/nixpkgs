@@ -65,7 +65,6 @@ stdenv.mkDerivation rec {
   preConfigure =
     ''
       # FIXME: patch this in systemd properly (and send upstream).
-      # FIXME: use sulogin from util-linux once updated.
       for i in src/remount-fs/remount-fs.c src/core/mount.c src/core/swap.c src/fsck/fsck.c units/emergency.service.in units/rescue.service.in src/journal/cat.c src/core/shutdown.c src/nspawn/nspawn.c; do
         test -e $i
         substituteInPlace $i \
@@ -139,11 +138,6 @@ stdenv.mkDerivation rec {
       ln -s $out/lib/systemd/systemd $out/sbin/telinit
       for i in init halt poweroff runlevel reboot shutdown; do
         ln -s $out/bin/systemctl $out/sbin/$i
-      done
-
-      # Fix reference to /bin/false in the D-Bus services.
-      for i in $out/share/dbus-1/system-services/*.service; do
-        substituteInPlace $i --replace /bin/false ${coreutils}/bin/false
       done
 
       rm -rf $out/etc/rpm

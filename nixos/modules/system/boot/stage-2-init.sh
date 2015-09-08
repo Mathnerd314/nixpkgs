@@ -149,10 +149,10 @@ if [ -n "@useHostResolvConf@" -a -e /etc/resolv.conf ]; then
 fi
 
 
-# Create /var/setuid-wrappers as a tmpfs.
-rm -rf /var/setuid-wrappers
-mkdir -m 0755 -p /var/setuid-wrappers
-mount -t tmpfs -o "mode=0755" tmpfs /var/setuid-wrappers
+# Create ${config.security.wrapperDir} as a tmpfs.
+rm -rf ${config.security.wrapperDir}
+mkdir -m 0755 -p ${config.security.wrapperDir}
+mount -t tmpfs -o "mode=0755" tmpfs ${config.security.wrapperDir}
 
 
 # Run the script that performs all configuration activation that does

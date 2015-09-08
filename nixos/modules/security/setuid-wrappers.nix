@@ -60,12 +60,12 @@ in
     security.wrapperDir = mkOption {
       internal = true;
       type = types.path;
-      default = "/var/setuid-wrappers";
+      default = "${config.security.wrapperDir}";
       description = ''
         This option defines the path to the setuid wrappers.  It
         should generally not be overriden. Some packages in Nixpkgs
         expect that <option>wrapperDir</option> is
-        <filename>/var/setuid-wrappers</filename>.
+        <filename>${config.security.wrapperDir}</filename>.
       '';
     };
 
