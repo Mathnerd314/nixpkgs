@@ -56,5 +56,8 @@ stdenv.mkDerivation {
     homepage = http://fontforge.github.io;
     platforms = stdenv.lib.platforms.all;
   };
+  passthru = lib.optionalAttrs withPython {
+    pythonPath = [];
+  };
 }
 
