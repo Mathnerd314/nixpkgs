@@ -503,12 +503,11 @@ in
           ''
             ${cfg.displayManager.job.preStart}
 
-            rm -f /tmp/.X0-lock
+            rm -f /tmp/.X${toString cfg.display}-lock
           '';
 
-        script = "${cfg.displayManager.job.execCmd}";
-
         serviceConfig = {
+          ExecStart = cfg.displayManager.job.execCmd;
           Restart = "always";
           RestartSec = "200ms";
         };
