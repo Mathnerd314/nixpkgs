@@ -138,6 +138,8 @@ in
 
     environment.systemPackages = [ pkgs.slim ];
 
+    # Not supported
+    services.xserver.displayManager.setupDisplayCommands = "";
   };
 
 }

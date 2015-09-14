@@ -220,7 +220,17 @@ in
           ''
             xmessage "Hello World!" &
           '';
-        description = "Shell commands executed just before the window or desktop manager is started.";
+        description = "Shell commands executed just before the window or desktop manager is started";
+      };
+
+      setupDisplayCommands = mkOption {
+        type = types.lines;
+        default = "";
+        example =
+          ''
+            xmessage "Hello World!" &
+          '';
+        description = "Shell commands executed just after the display server is started";
       };
 
       hiddenUsers = mkOption {

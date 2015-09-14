@@ -112,33 +112,41 @@ in
 
     programs.dconf.profiles.gdm = "${gdm}/share/dconf/profile/gdm";
 
-    # Use AutomaticLogin if delay is zero, because it's immediate.
-    # Otherwise with TimedLogin with zero seconds the prompt is still
-    # presented and there's a little delay.
-    environment.etc."gdm/custom.conf".text = ''
-      [daemon]
-      ${optionalString cfg.gdm.autoLogin.enable (
-        if cfg.gdm.autoLogin.delay > 0 then ''
-          TimedLoginEnable=true
-          TimedLogin=${cfg.gdm.autoLogin.user}
-          TimedLoginDelay=${toString cfg.gdm.autoLogin.delay}
-        '' else ''
-          AutomaticLoginEnable=true
-          AutomaticLogin=${cfg.gdm.autoLogin.user}
-        '')
-      }
+    environment.etc = {
+      # Use AutomaticLogin if delay is zero, because it's immediate.
+      # Otherwise with TimedLogin with zero seconds the prompt is still
+      # presented and there's a little delay.
+      "gdm/custom.conf".text = ''
+        [daemon]
+        ${optionalString cfg.gdm.autoLogin.enable (
+          if cfg.gdm.autoLogin.delay > 0 then ''
+            TimedLoginEnable=true
+            TimedLogin=${cfg.gdm.autoLogin.user}
+            TimedLoginDelay=${toString cfg.gdm.autoLogin.delay}
+          '' else ''
+            AutomaticLoginEnable=true
+            AutomaticLogin=${cfg.gdm.autoLogin.user}
+          '')
+        }
 
-      [security]
+        [security]
 
-      [xdmcp]
+        [xdmcp]
 
-      [greeter]
+        [greeter]
 
-      [chooser]
+        [chooser]
 
-      [debug]
-      ${optionalString cfg.gdm.debug "Enable=true"}
-    '';
+        [debug]
+        ${optionalString cfg.gdm.debug "Enable=true"}
+      '';
+    } // optionalAttrs (cfg.setupDisplayCommands != "") {
+      "gdm/Init/Default".source = writeScript
+                                    ''
+                                      #! /bin/sh
+                                      ${dmcfg.setupDisplayCommands}
+                                    '';
+    };
 
     # GDM LFS PAM modules, adapted somehow to NixOS
     security.pam.services = {

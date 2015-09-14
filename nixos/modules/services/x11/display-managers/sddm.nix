@@ -35,6 +35,15 @@ let
     SessionCommand=${dmcfg.session.script}
     SessionDir=${dmcfg.session.desktops}
     XauthPath=${pkgs.xorg.xauth}/bin/xauth
+    ${optionalString (dmcfg.setupDisplayCommands != "")
+      ''
+        DisplayCommand=${writeScript
+          ''
+            #! /bin/sh
+            ${dmcfg.setupDisplayCommands}
+          ''}
+      ''
+    }
 
     ${optionalString cfg.autoLogin.enable ''
     [Autologin]
