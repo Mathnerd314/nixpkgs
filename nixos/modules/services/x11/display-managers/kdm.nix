@@ -104,7 +104,12 @@ in
 
       setupScript = mkOption {
         type = types.lines;
-        default = "";
+        default = optionalString (dmcfg.setupDisplayCommands != "")
+          (writeScript
+              ''
+                #! /bin/sh
+                ${dmcfg.setupDisplayCommands}
+              '');
         description = ''
           The path to a KDM setup script. This script is run as root just
           before KDM starts. Can be used for setting up

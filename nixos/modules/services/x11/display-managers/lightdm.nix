@@ -69,7 +69,15 @@ let
       xserver-command = ${xserverWrapper}
       session-wrapper = ${dmcfg.session.script}
       greeter-session = ${cfg.greeter.name}
-      ${cfg.extraSeatDefaults}
+      ${optionalString (dmcfg.setupDisplayCommands != "")
+        ''
+          display-setup-script=${writeScript
+            ''
+              #! /bin/sh
+              ${dmcfg.setupDisplayCommands}
+            ''}
+        ''
+      }${cfg.extraSeatDefaults}
     '';
 
   gtkGreeterConf = writeText "lightdm-gtk-greeter.conf"

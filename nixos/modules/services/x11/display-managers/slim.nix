@@ -19,7 +19,6 @@ let
       reboot_cmd ${config.systemd.package}/sbin/shutdown -r now
       ${optionalString (cfg.defaultUser != null) ("default_user " + cfg.defaultUser)}
       ${optionalString cfg.autoLogin "auto_login yes"}
-      ${cfg.extraConfig}
     '';
 
   # Unpack the SLiM theme, or use the default.
@@ -138,6 +137,8 @@ in
 
     environment.systemPackages = [ pkgs.slim ];
 
+    # Not supported
+    services.xserver.displayManager.setupDisplayCommands = "";
   };
 
 }
