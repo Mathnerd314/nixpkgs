@@ -16,6 +16,16 @@ stdenv.mkDerivation rec {
     "--with-udevrulesdir=$out/lib/udev/rules.d"
     "--with-systemdsystemunitdir=$(out)/etc/systemd/system"
     "--disable-bash-completion"
+    "--with-daemon-user=colord"
+    "--disable-gtk-doc"
+    "--disable-vala"
+    "--disable-print-profiles"
+    "--disable-sane"
+    "--disable-libcolordcompat"
+    "--disable-rpath"
+    "--disable-examples"
+    "--disable-silent-rules"
+    "--disable-dependency-tracking"
   ];
 
   buildInputs = [ glib polkit pkgconfig intltool gusb libusb1 lcms2 sqlite systemd dbus gobjectIntrospection
