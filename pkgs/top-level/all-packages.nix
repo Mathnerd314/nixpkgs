@@ -14488,6 +14488,8 @@ let
 
   content = builderDefsPackage (callPackage ../applications/science/math/content) {};
 
+  eureqa = callPackage ../applications/science/math/eureqa { };
+
   jags = callPackage ../applications/science/math/jags { };
 
 
