@@ -143,6 +143,15 @@ in
       type = types.listOf types.path;
     };
 
+    environment.create-usrbinenv = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Whether to create the symlink /usr/bin/env for compatibility
+        with scripts from other distributions.
+      '';
+    };
+
   };
 
   config = {
@@ -182,6 +191,18 @@ in
         ln -sfn "${cfg.binsh}" /bin/.sh.tmp
         mv /bin/.sh.tmp /bin/sh # atomically replace /bin/sh
       '';
+
+    system.activationScripts.usrbinenv =
+      if config.environment.create-usrbinenv then
+        ''
+          mkdir -m 0755 -p /usr/bin
+          ln -sfn ${pkgs.coreutils}/bin/env /usr/bin/.env.tmp
+          mv /usr/bin/.env.tmp /usr/bin/env # atomically replace /usr/bin/env
+        ''
+      else
+        ''
+          rm -rf /usr
+        '';
 
   };
 

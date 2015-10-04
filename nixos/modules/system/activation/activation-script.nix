@@ -128,13 +128,6 @@ in
         mkdir -m 0555 -p /var/empty
       '';
 
-    system.activationScripts.usrbinenv =
-      ''
-        mkdir -m 0755 -p /usr/bin
-        ln -sfn ${pkgs.coreutils}/bin/env /usr/bin/.env.tmp
-        mv /usr/bin/.env.tmp /usr/bin/env # atomically replace /usr/bin/env
-      '';
-
     system.activationScripts.tmpfs =
       ''
         ${pkgs.utillinux}/bin/mount -o "remount,size=${config.boot.devSize}" none /dev
