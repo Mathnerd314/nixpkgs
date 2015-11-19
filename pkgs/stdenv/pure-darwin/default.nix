@@ -1,5 +1,5 @@
 { system      ? builtins.currentSystem
-, allPackages ? import ../../top-level/all-packages-wrapper.nix
+, allPackages ? import ../../..
 , platform    ? null
 , config      ? {}
 }:
@@ -32,7 +32,7 @@ let
 
   tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "1lz1b0grl4642h6n635xvi6imf0yyy1zyzdr9ing5aphzz0z5iic"; executable = false; };
 in rec {
-  allPackages = import ../../top-level/all-packages-wrapper.nix;
+  allPackages = import ../../..;
 
   commonPreHook = ''
     export NIX_ENFORCE_PURITY=1
