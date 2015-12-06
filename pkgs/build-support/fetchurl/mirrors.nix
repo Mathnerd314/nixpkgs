@@ -49,6 +49,44 @@ rec {
     ftp://gcc.gnu.org/pub/gcc/
   ];
 
+  # Gimp.
+  gimp = [
+    # meta-mirror - but only for gimp proper
+    # https://download.gimp.org/mirror/pub/gimp/
+
+    # sites from http://download.gimp.org/pub/gimp/MIRRORS
+    # gimp does not maintain their mirror list well; there
+    # are plenty more at
+    # https://bugzilla.gnome.org/buglist.cgi?bug_status=UNCONFIRMED&bug_status=NEW&component=download%20mirrors&product=gimp-web
+
+    # United Kingdom
+    http://www.mirrorservice.org/sites/ftp.gimp.org/pub/
+    ftp://ftp.mirrorservice.org/sites/ftp.gimp.org/pub/
+
+    # United States
+    http://gimp.galaxyverge.com/pub/
+    http://gimper.net/downloads/pub/
+    http://mirror.hessmo.com/gimp/pub/
+    http://gimp.mirrors.hoobly.com/pub/
+    ftp://mirrors-usa.go-parts.com/gimp/
+    http://go-parts.com/mirrors-usa/gimp/
+
+    # Brazil
+    http://mirror.nbtelecom.com.br/gimp/pub/
+
+    # Germany
+    ftp://artfiles.org/gimp.org/pub/
+    http://artfiles.org/gimp.org/pub/
+    ftp://ftp.fau.de/gimp/
+    https://ftp.fau.de/gimp/
+
+    # South Africa
+    http://gimp.afri.cc/pub/
+
+    # master
+    http://download.gimp.org/pub/gimp/
+  ];
+
   # GnuPG.
   gnupg = [
     https://gnupg.org/ftp/gcrypt/
