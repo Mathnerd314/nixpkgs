@@ -2,11 +2,11 @@
 librsvg, glib, gtk, libXext, libXxf86vm, poppler, xineLib }:
 
 stdenv.mkDerivation rec {
-  name = "eaglemode-0.86.0";
+  name = "eaglemode-0.89.1";
 
   src = fetchurl {
     url = "mirror://sourceforge/eaglemode/${name}.tar.bz2";
-    sha256 = "1a2hzyck95g740qg4p4wd4fjwsmlknh75i9sbx5r5v9pyr4i3m4f";
+    sha256 = "1mgw73xvx2l1f14798krq36pkfab31s1q39mn1qpssdp141np6cs";
   };
 
   buildInputs = [ perl libX11 libjpeg libpng libtiff pkgconfig
