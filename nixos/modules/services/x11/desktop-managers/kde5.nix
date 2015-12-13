@@ -138,7 +138,7 @@ in
 
       ++ lib.optionals cfg.phonon.gstreamer.enable
         [
-          pkgs.phonon_backend_gstreamer
+          (lowPrio pkgs.phonon_backend_gstreamer)
           pkgs.gst_all.gstreamer
           pkgs.gst_all.gstPluginsBase
           pkgs.gst_all.gstPluginsGood

@@ -27,16 +27,7 @@ with lib;
 
     services.dbus.packages = [ pkgs.bluez ];
 
-    systemd.services."dbus-org.bluez" = {
-      description = "Bluetooth Service";
-      serviceConfig = {
-        Type = "dbus";
-        BusName = "org.bluez";
-        ExecStart = "${pkgs.bluez}/sbin/bluetoothd -n";
-      };
-      wantedBy = [ "bluetooth.target" ];
-    };
-
+    systemd.packages = [ pkgs.bluez ];
   };
 
 }

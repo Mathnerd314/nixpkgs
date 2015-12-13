@@ -140,6 +140,10 @@ in
               $out/bin/glib-compile-schemas $out/share/glib-2.0/schemas
           fi
 
+          if [ -x $out/bin/qio-querymodules -a -w $out/lib/gio/modules ] && [ -n "$(ls -A $1/lib/gio/modules)" ]; then
+              $out/bin/gio-querymodules $out/lib/gio/modules
+          fi
+
           if [ -x $out/bin/update-desktop-database -a -w $out/share/applications ]; then
               $out/bin/update-desktop-database $out/share/applications
           fi

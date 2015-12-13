@@ -1,4 +1,4 @@
-{stdenv, fetchurl, pkgconfig, fuse, obexftp}:
+{stdenv, fetchurl, pkgconfig, fuse, bluez, obexftp}:
    
 stdenv.mkDerivation rec {
   name = "obexfs-0.12";
@@ -8,7 +8,7 @@ stdenv.mkDerivation rec {
     sha256 = "1g3krpygk6swa47vbmp9j9s8ahqqcl9ra8r25ybgzv2d9pmjm9kj";
   };
 
-  buildInputs = [pkgconfig fuse obexftp];
+  buildInputs = [pkgconfig fuse bluez obexftp];
 
   NIX_LDFLAGS = "-lobexftp";
 

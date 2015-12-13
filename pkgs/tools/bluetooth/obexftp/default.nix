@@ -10,6 +10,10 @@ stdenv.mkDerivation rec {
 
   buildInputs = [pkgconfig bluez cmake];
 
+  postPatch = ''
+    sed -i 's/REQUIRES    "bluetooth openobex"/REQUIRES    "bluez openobex"/' CMakeLists.txt
+  '';
+
   propagatedBuildInputs = [openobex];
 
   meta = {
