@@ -11229,6 +11229,8 @@ let
 
   amsn = callPackage ../applications/networking/instant-messengers/amsn { };
 
+  antconc = callPackage_i686 ../applications/misc/antconc { };
+
   antimony = qt5.callPackage ../applications/graphics/antimony {};
 
   antiword = callPackage ../applications/office/antiword {};
