@@ -1,0 +1,56 @@
+# junk
+- *docs/
+- *.diff
+- *.changelog
+- *.asc
+- *.css
+- *.git_old/
+- *.html
+- *.patch
+- *.png
+- *.rpm
+- *.sign
+- *.jpg
+- *.mp4
+- *.pdf
+- *ChangeLog*
+- *Changelog*
+- *COPYING*
+- *CHANGES*
+- *README*
+- *ANNOUNCE*
+- *ReleaseNotes*
+- /dist
+- old-releases/
+- old/
+- older/
+- patches/
+- pre/
+- prehistoric/
+- testing/
+- RPMS/
+- alpha/
+
+# old stuff
+- /linux/kernel/v1.*/
+- /linux/kernel/v2.*/
+- /linux/daemons/autofs/*v3
+- /linux/daemons/autofs/*v4
+- /linux/utils/net/NIS
+- /linux/utils/boot/syslinux/*/
+- /linux/kernel/Historic/
+- /software/admin/mon/
+- /software/libs/glibc/
+- /tools/crosstool
+
+# some useful utilities mixed in with random data
++ /linux/kernel/people/jeffm/
++ /linux/kernel/people/kdave/
++ /linux/kernel/people/mason/
+- /linux/kernel/people/*/
+
+# stuff we don't need
+- /scm
+- /linux/kernel/projects/backports/
+- /linux/kernel/projects/rt/
+- /linux/kernel/next/
