@@ -13798,8 +13798,6 @@ in
 
   omxplayer = callPackage ../applications/video/omxplayer { };
 
-  oneteam = callPackage ../applications/networking/instant-messengers/oneteam {};
-
   openbox = callPackage ../applications/window-managers/openbox { };
 
   openbox-menu = callPackage ../applications/misc/openbox-menu { };
@@ -16319,7 +16317,9 @@ in
 
   lean = callPackage ../applications/science/logic/lean {};
 
-  leo2 = callPackage ../applications/science/logic/leo2 {};
+  leo2 = callPackage ../applications/science/logic/leo2 {
+    ocamlPackages = ocamlPackages_4_02;
+  };
 
   logisim = callPackage ../applications/science/logic/logisim {};
 
