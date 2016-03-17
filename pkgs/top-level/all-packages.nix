@@ -125,11 +125,10 @@ let
 
   # The package compositions.  Yes, this isn't properly indented.
   pkgsFun = pkgs: overrides:
-    with helperFunctions;
     let
       defaultScope = pkgs // pkgs.xorg;
       self = self_ // overrides;
-      self_ = with self; helperFunctions // {
+      self_ = with self; helperFunctions // (with helperFunctions; {
 
   # Make some arguments passed to all-packages.nix available
   inherit system platform;
@@ -16463,7 +16462,7 @@ let
 
   mg = callPackage ../applications/editors/mg { };
 
-}; # self_ =
+}); # self_ =
 
 
   ### Deprecated aliases - for backward compatibility
