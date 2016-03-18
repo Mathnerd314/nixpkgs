@@ -131,7 +131,7 @@ let
       stdenvAdapters =
         import ../stdenv/adapters.nix pkgs;
 
-      self_ = with self; helperFunctions // (with helperFunctions; {
+      self_ = with self; helperFunctions // {
 
   # Make some arguments passed to all-packages.nix available
   inherit system platform;
@@ -16461,7 +16461,7 @@ let
 
   mg = callPackage ../applications/editors/mg { };
 
-}); # self_ =
+}; # self_ =
 
 
   ### Deprecated aliases - for backward compatibility
