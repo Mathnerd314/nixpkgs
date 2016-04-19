@@ -256,7 +256,9 @@ in
 
   libredirect = callPackage ../build-support/libredirect { };
 
-  makeDesktopItem = callPackage ../build-support/make-desktopitem { };
+  inherit (callPackage ../build-support/make-desktopitem { })
+    makeDesktopItem
+    makeDesktopItemScript;
 
   makeAutostartItem = callPackage ../build-support/make-startupitem { };
 
