@@ -6286,6 +6286,8 @@ in
     inherit (perlPackages) XMLSimple;
   };
 
+  ida-demo = callPackage_i686 ../development/tools/misc/ida-demo { };
+
   include-what-you-use = callPackage ../development/tools/analysis/include-what-you-use {
     llvmPackages = llvmPackages_38;
   };
