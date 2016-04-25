@@ -3,7 +3,7 @@
 }:
 
 let
-  inherit (bootPkgs) ghc;
+  inherit (bootPkgs) ghcWithPackages (pkgs: with pkgs; [mtl ansi-terminal shake QuickCheck]);
 
 in stdenv.mkDerivation rec {
   version = "7.11.20151216";
@@ -42,7 +42,7 @@ in stdenv.mkDerivation rec {
   '';
 
   configureFlags = [
-    "--with-gcc=${stdenv.cc}/bin/cc"
+    "CC=${stdenv.cc}/bin/cc"
     "--with-gmp-includes=${gmp.dev}/include" "--with-gmp-libraries=${gmp.out}/lib"
     "--with-curses-includes=${ncurses.dev}/include" "--with-curses-libraries=${ncurses.out}/lib"
   ] ++ stdenv.lib.optional stdenv.isDarwin [
