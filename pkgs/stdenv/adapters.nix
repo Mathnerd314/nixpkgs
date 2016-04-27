@@ -234,11 +234,4 @@ rec {
         NIX_CFLAGS_LINK = toString (args.NIX_CFLAGS_LINK or "") + " -fuse-ld=gold";
       });
     };
-
-  dropCxx = drv: drv.override {
-    stdenv = if pkgs.stdenv.isDarwin
-      then pkgs.allStdenvs.stdenvDarwinNaked
-      else pkgs.stdenv;
-  };
-
 }
