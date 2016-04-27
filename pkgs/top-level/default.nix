@@ -68,7 +68,7 @@ let
   # (un-overridden) set of packages, allowing packageOverrides
   # attributes to refer to the original attributes (e.g. "foo =
   # ... pkgs.foo ...").
-  pkgs = pkgsWithOverrides (self: config.packageOverrides or (super: {}));
+  configOverrider = self: config.packageOverrides or (super: {});
 
   # Return the complete set of packages, after applying the overrides
   # returned by the `overrider' function (see above).  Warning: this
@@ -86,7 +86,7 @@ let
         });
 
       stdenvDefault = _self: _super: import ./stdenv.nix {
-        inherit system bootStdenv crossSystem config platform lib pkgs mkPackages;
+        inherit system bootStdenv crossSystem config platform lib mkPackages;
       };
 
       allPackagesArgs = {
@@ -123,4 +123,4 @@ let
                     lib.extends stdenvAdapters (
                       self: {}))))))));
 in
-  pkgs
+  pkgsWithOverrides configOverrider
