@@ -18,6 +18,11 @@
 { # The system (e.g., `i686-linux') for which to build the packages.
   system
 
+, # The standard environment to use. Expected to be a function taking some
+  # subset of: { system, allPackages, platform, config, crossSystem, lib }.
+  # Included here just to assist with debugging stdenvs.
+  stdenv ? null
+
 , # The configuration attribute set
   config ? {}
 
@@ -27,6 +32,7 @@
 
 let
   platform_ = platform;
+  stdenv_ = stdenv;
 
 in let
   lib = import ../lib;
@@ -60,11 +66,15 @@ in let
 
   # Partially apply some args for building phase pkgs sets
   allPackages = args: import ./top-level ({
-    inherit lib mkPackages;
+    crossSystem = null; # boot pkg sets have host == target
+    inherit
+      system config platform
+      lib mkPackages;
   } // args);
 
-  stdenv = import ./stdenv {
-    inherit system allPackages platform config crossSystem lib;
-  };
+  stdenv =
+    (if stdenv_ != null then stdenv else import ./stdenv) {
+      inherit system allPackages platform config crossSystem lib;
+    };
 
 in allPackages { inherit system stdenv config crossSystem platform; }

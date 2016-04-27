@@ -1,4 +1,4 @@
-{ system, allPackages, platform, crossSystem, config, ... } @ args:
+{ allPackages, crossSystem, config, ... } @ args:
 
 rec {
   vanillaStdenv = import ../. (args // {
@@ -11,10 +11,11 @@ rec {
   };
 
   buildPackages = allPackages {
+    # Partially applied `allPackages` has `crossSystem = null` by default
+    inherit crossSystem;
     # It's OK to change the built-time dependencies
     allowCustomOverrides = true;
     stdenv = vanillaStdenv;
-    inherit system platform crossSystem config;
   };
 
   stdenvCross = with buildPackages;
