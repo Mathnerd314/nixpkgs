@@ -1,4 +1,4 @@
-/* Impure default args for `pkgs/top-level/default.nix`. See that file
+/* Impure default args for `pkgs/default.nix`. See that file
    for the meaning of each argument. */
 
 { system ? builtins.currentSystem, config ? null, ... } @ args :
@@ -34,6 +34,6 @@ let
         then configExpr { inherit pkgs; }
         else configExpr;
 
-  pkgs = import ./top-level (args // { inherit system config; });
+  pkgs = import ./. (args // { inherit system config; });
 
 in pkgs

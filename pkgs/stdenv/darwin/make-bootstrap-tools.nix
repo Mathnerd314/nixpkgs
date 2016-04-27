@@ -293,6 +293,7 @@ rec {
     stdenv = import ./. { inherit system bootstrapFiles; };
   in import ../../.. {
     inherit system;
-    bootStdenv = stdenv.stdenvDarwin;
+    allowCustomOverrides = false;
+    stdenv = stdenv.stdenvDarwin;
   };
 }

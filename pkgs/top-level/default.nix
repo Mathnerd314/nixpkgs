@@ -1,18 +1,22 @@
-/* This file composes the Nix Packages collection.  That is, it
-   imports the functions that build the various packages, and calls
-   them with appropriate arguments.  The result is a set of all the
-   packages in the Nix Packages collection for some particular
-   platform. */
+/* This file composes a single bootstrapping phase of the Nix Packages
+   collection. That is, it imports the functions that build the various
+   packages, and calls them with appropriate arguments. The result is a set of
+   all the packages in the Nix Packages collection for some particular platform
+   for some particular phase.
+
+   Default arguments are only provided for bootstrapping
+   arguments. Normal users should not import this directly but instead
+   import `pkgs/default.nix` or `default.nix`. */
 
 
 { # The system (e.g., `i686-linux') for which to build the packages.
   system
 
-, # The standard environment to use.  Only used for bootstrapping.  If
-  # null, the default standard environment is used.
-  bootStdenv ? null
+, # The standard environment to use.
+  stdenv
 
-, allowCustomOverrides ? (bootStdenv == null)
+, # Disabled only for bootstrapping
+  allowCustomOverrides ? true
 
 , # Non-GNU/Linux OSes are currently "impure" platforms, with their libc
   # outside of the store.  Thus, GCC, GFortran, & co. must always look for
@@ -26,41 +30,12 @@
   config ? {}
 
 , crossSystem ? null
-, platform ? null
-} @ args:
-
-let platform_ = platform; in # rename the function arguments
+, platform
+, lib
+, mkPackages
+}:
 
 let
-  lib = import ../../lib;
-
-  # Allow setting the platform in the config file. Otherwise, let's use a reasonable default (pc)
-
-  platformAuto = let
-      platforms = (import ./platforms.nix);
-    in
-      if system == "armv6l-linux" then platforms.raspberrypi
-      else if system == "armv7l-linux" then platforms.armv7l-hf-multiplatform
-      else if system == "armv5tel-linux" then platforms.sheevaplug
-      else if system == "mips64el-linux" then platforms.fuloong2f_n32
-      else if system == "x86_64-linux" then platforms.pc64
-      else if system == "i686-linux" then platforms.pc32
-      else platforms.pcBase;
-
-  platform = if platform_ != null then platform_
-    else config.platform or platformAuto;
-
-  # A few packages make make a new package set to draw their dependencies from.
-  # (Currently to get a cross tool chain, or forced-i686 package.) Rather than
-  # give `all-packages.nix` all the arguments to this function, even ones that
-  # don't concern it, we give it this function to "re-call" nixpkgs, inheriting
-  # whatever arguments it doesn't explicitly provide. This way, `all-packages.nix`
-  # doesn't know more than it needs too.
-  #
-  # It's OK that `args` doesn't include the defaults: they'll be
-  # deterministically inferred the same way.
-  mkPackages = newArgs: import ./. (args // newArgs);
-
   # Allow packages to be overridden globally via the `packageOverrides'
   # configuration option, which must be a function that takes `pkgs'
   # as an argument and returns a set of new or overridden packages.
@@ -85,9 +60,10 @@ let
           inherit lib; inherit (self) stdenv; inherit (self.xorg) lndir;
         });
 
-      stdenvDefault = _self: _super: import ./stdenv.nix {
-        inherit system bootStdenv crossSystem config platform lib mkPackages;
-      };
+      stdenvDefault = let
+          stdenv_ = stdenv;
+          changer = config.replaceStdenv or null;
+        in { stdenv = stdenv_ // { inherit platform; }; };
 
       allPackagesArgs = {
         inherit system noSysDirs config crossSystem platform lib
@@ -118,9 +94,8 @@ let
           lib.extends stdenvOverrides (
             lib.extends aliases (
               lib.extends allPackages (
-                lib.extends stdenvDefault (
-                  lib.extends trivialBuilders (
-                    lib.extends stdenvAdapters (
-                      self: {}))))))));
+                lib.extends trivialBuilders (
+                  lib.extends stdenvAdapters (
+                    self: stdenvDefault)))))));
 in
   pkgsWithOverrides configOverrider
