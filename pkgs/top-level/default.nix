@@ -104,8 +104,7 @@ in let
             in { stdenv = stdenv_ // { inherit platform; }; };
 
           allPackagesArgs = {
-            inherit system config crossSystem platform lib
-              pkgsWithOverrides mkPackages;
+            inherit system config crossSystem platform lib mkPackages;
           };
           allPackages = self: super:
             let res = import ./all-packages.nix allPackagesArgs res self;
