@@ -34,6 +34,6 @@ let
         then configExpr { inherit pkgs; }
         else configExpr;
 
-  pkgs = import ./. (args // { inherit system config; });
+  pkgs = import ./top-level (args // { inherit system config; });
 
 in pkgs
