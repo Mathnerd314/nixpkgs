@@ -138,8 +138,7 @@ in let
 
   # Partially apply some args for building phase pkgs sets
   allPackages = args: allPackagesFun ({
-    crossSystem = null; # boot pkg sets have host == target
-    inherit system config platform;
+    inherit system config platform crossSystem;
   } // args);
 
   stdenv =
@@ -147,4 +146,4 @@ in let
       inherit system allPackages platform config crossSystem lib;
     };
 
-in allPackagesFun { inherit system stdenv config crossSystem platform; }
+in allPackagesFun { inherit system config platform crossSystem stdenv; }
