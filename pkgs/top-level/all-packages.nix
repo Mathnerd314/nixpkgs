@@ -1,4 +1,4 @@
-{ system, noSysDirs, config, crossSystem, platform, lib
+{ system, config, crossSystem, platform, lib
 , pkgsWithOverrides, mkPackages
 }:
 self: pkgs:
@@ -4129,6 +4129,13 @@ in
     cross = crossSystem;
   };
 
+  # Non-GNU/Linux OSes are currently "impure" platforms, with their libc
+  # outside of the store.  Thus, GCC, GFortran, & co. must always look for
+  # files in standard system directories (/usr/include, etc.)
+  noSysDirs = (system != "x86_64-freebsd" && system != "i686-freebsd"
+               && system != "x86_64-solaris"
+               && system != "x86_64-kfreebsd-gnu");
+
   gcc45 = lowPrio (wrapCC (callPackage ../development/compilers/gcc/4.5 {
     inherit noSysDirs;
     texinfo = texinfo4;
@@ -6445,13 +6452,13 @@ in
   beecrypt = callPackage ../development/libraries/beecrypt { };
 
   beignet = callPackage ../development/libraries/beignet {
-    inherit (llvmPackages) clang-unwrapped; 
-    inherit (xlibs) libX11; 
-    inherit (xorg) libXfixes libpthreadstubs libXdmcp libXdamage libXxf86vm; 
-    inherit (python3Packages) python; 
-    inherit (purePackages) gl; 
-  }; 
-  
+    inherit (llvmPackages) clang-unwrapped;
+    inherit (xlibs) libX11;
+    inherit (xorg) libXfixes libpthreadstubs libXdmcp libXdamage libXxf86vm;
+    inherit (python3Packages) python;
+    inherit (purePackages) gl;
+  };
+
   belle-sip = callPackage ../development/libraries/belle-sip { };
 
   bobcat = callPackage ../development/libraries/bobcat { };
