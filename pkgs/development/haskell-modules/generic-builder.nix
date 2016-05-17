@@ -280,7 +280,7 @@ stdenv.mkDerivation ({
 
     isHaskellLibrary = hasActiveLibrary;
 
-    env = stdenv.mkDerivation {
+    env = stdenv.lib.makeOverridable stdenv.mkDerivation {
       name = "interactive-${pname}-${version}-environment";
       nativeBuildInputs = [ ghcEnv systemBuildInputs ]
         ++ optional isGhcjs ghc."socket.io"; # for ghcjsi
