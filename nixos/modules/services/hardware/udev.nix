@@ -143,7 +143,7 @@ let
       for i in ${toString ([udev] ++ cfg.packages)}; do
         echo "Adding hwdb files for package $i"
         for j in $i/{etc,lib}/udev/hwdb.d/*; do
-          ln -s $j etc/udev/hwdb.d/$(basename $j)
+          ln -fs $j etc/udev/hwdb.d/$(basename $j)
         done
       done
 
