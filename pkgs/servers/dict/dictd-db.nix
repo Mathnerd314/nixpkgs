@@ -1,37 +1,26 @@
-{ builderDefs }:
+{ stdenv, fetchurl }:
 
 let makeDictdDB = _src: _name: _subdir: _locale:
-with builderDefs;
-	let localDefs = builderDefs.passthru.function (rec {
-		src=_src;
-		doInstall = fullDepEntry (''
-			mkdir -p $out/share/dictd
-			tar xf  ${src}
-			cp $(ls ./${_subdir}/*.{dict*,index} || true) $out/share/dictd 
-			echo "${_locale}" >$out/share/dictd/locale
-		'') ["minInit" "addInputs" "defEnsureDir"];
-
-		buildInputs = [];
-		configureFlags = [];
-	});
-	in with localDefs;
-stdenv.mkDerivation rec {
-	name = "dictd-db-${_name}";
-	locale = _locale;
-	dbName = _name;
-	builder = writeScript (name + "-builder")
-		(textClosure localDefs 
-			[doInstall doForceShare doPropagate]);
-	meta = {
-		description = "${name} dictionary for dictd";
-	};
-};
+    stdenv.mkDerivation rec {
+        name = "dictd-db-${_name}";
+        src=_src;
+        sourceRoot=".";
+        locale = _locale;
+        dbName = _name;
+        installPhase = ''
+            mkdir -p $out/share/dictd
+            cp $(ls ./${_subdir}/*.{dict*,index} || true) $out/share/dictd
+            echo "${_locale}" >$out/share/dictd/locale
+        '';
+        meta = {
+            description = "${name} dictionary for dictd";
+        };
+    };
 # Probably a bug in some FreeDict release files, but easier to trivially
 # work around than report. Not that it can cause any other problems..
 makeDictdDBFreedict = _src: _name: _locale: makeDictdDB _src _name "{.,bin}" _locale;
-fetchurl = builderDefs.fetchurl;
 
-in 
+in
 
 rec {
 	nld2eng = makeDictdDBFreedict (fetchurl {
