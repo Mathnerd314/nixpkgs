@@ -1,6 +1,7 @@
 { stdenv, fetchFromGitHub, autoreconfHook, pkgconfig, gtk_doc, gobjectIntrospection
 , libgsystem, xz, bzip2, e2fsprogs, libsoup, gpgme, which, autoconf, automake, libtool, fuse
 , libarchive, libcap, yacc, libxslt, docbook_xsl, docbook_xml_dtd_42, docbook_xml_dtd_43
+, valgrind
 }:
 
 let
@@ -30,7 +31,7 @@ in stdenv.mkDerivation rec {
 
   nativeBuildInputs = [
     autoconf automake libtool pkgconfig gtk_doc gobjectIntrospection which yacc
-    libxslt docbook_xsl docbook_xml_dtd_42 docbook_xml_dtd_43
+    libxslt docbook_xsl docbook_xml_dtd_42 docbook_xml_dtd_43 valgrind
   ];
 
   buildInputs = [ libgsystem xz e2fsprogs libsoup gpgme fuse libcap libarchive bzip2 ];
