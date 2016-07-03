@@ -3,10 +3,10 @@
 }:
 
 let
-  inherit (bootPkgs) ghcWithPackages (pkgs: with pkgs; [mtl ansi-terminal shake QuickCheck]);
+  ghc = bootPkgs.ghc;
 
 in stdenv.mkDerivation rec {
-  version = "7.11.20151216";
+  version = "8.1.x";
   name = "ghc-${version}";
   rev = "28638dfe79e915f33d75a1b22c5adce9e2b62b97";
 
@@ -15,10 +15,6 @@ in stdenv.mkDerivation rec {
     inherit rev;
     sha256 = "0rjzkzn0hz1vdnjikcbwfs5ggs8r3y4gqxfdn4jzfp45gx94wiwv";
   };
-
-  patches = [
-    ./ghc-7.x-dont-pass-linker-flags-via-response-files.patch   # https://github.com/NixOS/nixpkgs/issues/10752
-  ];
 
   postUnpack = ''
     pushd ghc-${builtins.substring 0 7 rev}
